@@ -1,0 +1,6 @@
+/.idea/
+/.venv/
+/poetry.lock
+__pycache__
+*.pyc
+/build/
