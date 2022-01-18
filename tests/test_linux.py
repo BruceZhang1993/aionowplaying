@@ -10,6 +10,9 @@ from aionowplaying import NowPlayingInterface, LoopStatus, PropertyName
 
 
 class MyNowPlayingInterface(NowPlayingInterface):
+    async def on_fullscreen(self, fullscreen: bool):
+        assert isinstance(fullscreen, bool)
+
     async def on_raise(self):
         print('on_raise')
 
@@ -17,16 +20,20 @@ class MyNowPlayingInterface(NowPlayingInterface):
         print('on_quit')
 
     async def on_loop_status(self, status: LoopStatus):
-        print('on_loop_status', status)
+        assert isinstance(status, LoopStatus)
+        assert status == LoopStatus.None_
 
     async def on_rate(self, rate: float):
-        print('on_rate', rate)
+        assert isinstance(rate, float)
+        assert rate == 1.0
 
     async def on_shuffle(self, shuffle: bool):
-        print('on_shuffle', shuffle)
+        assert isinstance(shuffle, bool)
+        assert not shuffle
 
     async def on_volume(self, volume: float):
-        print('on_volume', volume)
+        assert isinstance(volume, float)
+        assert volume == 1.0
 
     async def on_next(self):
         print('on_next')
@@ -44,7 +51,8 @@ class MyNowPlayingInterface(NowPlayingInterface):
         print('on_stop')
 
     async def on_seek(self, offset: int):
-        print('on_seek', offset)
+        assert isinstance(offset, int)
+        assert offset == 0
 
 
 @pytest.yield_fixture(scope='session')
@@ -60,6 +68,9 @@ def interface():
     assert it is not None
     it.set_property(PropertyName.Identity, 'TestNowPlayingPlayer')
     it.set_property(PropertyName.DesktopEntry, 'test-now-playing')
+    it.set_property(PropertyName.CanSetFullscreen, True)
+    it.set_property(PropertyName.CanRaise, True)
+    it.set_property(PropertyName.CanQuit, True)
     task = asyncio.ensure_future(it.start())
     yield task
     task.cancel()
@@ -84,12 +95,26 @@ class TestNowPlaying:
         assert isinstance(await iface.get_can_quit(), bool)
         assert isinstance(await iface.get_can_raise(), bool)
         assert isinstance(await iface.get_can_set_fullscreen(), bool)
+        assert isinstance(await iface.get_fullscreen(), bool)
         assert isinstance(await iface.get_desktop_entry(), str)
         assert isinstance(await iface.get_identity(), str)
         assert isinstance(await iface.get_supported_uri_schemes(), list)
         assert isinstance(await iface.get_supported_mime_types(), list)
-        assert await iface.get_can_quit() is False
-        assert await iface.get_can_raise() is False
-        assert await iface.get_can_set_fullscreen() is False
-        assert await iface.get_desktop_entry() == 'test-now-playing'
-        assert await iface.get_identity() == 'TestNowPlayingPlayer'
+
+    async def test_set_properties(self, interface, msgbus):
+        bus, introspection = msgbus
+        proxy_object = bus.get_proxy_object('org.mpris.MediaPlayer2.TestNowPlayingPlayer', '/org/mpris/MediaPlayer2',
+                                            introspection)
+        iface = proxy_object.get_interface('org.mpris.MediaPlayer2')
+        await iface.set_fullscreen(True)
+        await asyncio.sleep(1)
+        assert await iface.get_fullscreen() is True
+
+    async def test_methods(self, interface, msgbus):
+        bus, introspection = msgbus
+        proxy_object = bus.get_proxy_object('org.mpris.MediaPlayer2.TestNowPlayingPlayer', '/org/mpris/MediaPlayer2',
+                                            introspection)
+        iface = proxy_object.get_interface('org.mpris.MediaPlayer2')
+        await asyncio.sleep(1)
+        await iface.call_raise()
+        await iface.call_quit()

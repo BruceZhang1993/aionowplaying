@@ -13,6 +13,7 @@ class PropertyName(str, Enum):
     DesktopEntry = "DesktopEntry"
     SupportedUriSchemes = "SupportedUriSchemes"
     SupportedMimeTypes = "SupportedMimeTypes"
+    Fullscreen = "Fullscreen"
 
 
 class PlaybackPropertyName(str, Enum):
@@ -46,6 +47,7 @@ class LoopStatus(str, Enum):
 
 
 class PlayerProperties(BaseModel):
+    Fullscreen: bool = False
     CanQuit: bool = False
     CanSetFullscreen: bool = False
     CanRaise: bool = False
@@ -95,6 +97,9 @@ class BaseInterface:
         pass
 
     def start(self):
+        pass
+
+    async def on_fullscreen(self, fullscreen: bool):
         pass
 
     async def on_raise(self):

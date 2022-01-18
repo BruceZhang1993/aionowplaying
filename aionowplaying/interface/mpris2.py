@@ -154,6 +154,16 @@ class MprisServiceInterface(ServiceInterface):
         self._properties = PlayerProperties()
         self._it = it
 
+    @dbus_property(access=PropertyAccess.READWRITE, name=PropertyName.Fullscreen.value)
+    def fullscreen(self) -> 'b':
+        return self._properties.Fullscreen
+
+    @fullscreen.setter
+    async def fullscreen(self, value: 'b'):
+        if self._properties.CanSetFullscreen:
+            await self._it.on_fullscreen(value)
+            self._properties.Fullscreen = value
+
     @dbus_property(access=PropertyAccess.READ, name=PropertyName.CanQuit.value)
     def can_quit(self) -> 'b':
         return self._properties.CanQuit
