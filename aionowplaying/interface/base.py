@@ -95,49 +95,49 @@ class BaseInterface:
         pass
 
     def start(self):
-        raise NotImplementedError()
+        pass
 
     async def on_raise(self):
-        raise NotImplementedError()
+        pass
 
     async def on_quit(self):
-        raise NotImplementedError()
+        pass
 
     async def on_loop_status(self, status: LoopStatus):
-        raise NotImplementedError()
+        pass
 
     async def on_rate(self, rate: float):
-        raise NotImplementedError()
+        pass
 
     async def on_shuffle(self, shuffle: bool):
-        raise NotImplementedError()
+        pass
 
     async def on_volume(self, volume: float):
-        raise NotImplementedError()
+        pass
 
     async def on_next(self):
-        raise NotImplementedError()
+        pass
 
     async def on_previous(self):
-        raise NotImplementedError()
+        pass
 
     async def on_pause(self):
-        raise NotImplementedError()
+        pass
 
     async def on_play_pause(self):
-        raise NotImplementedError()
+        pass
 
     async def on_play(self):
-        raise NotImplementedError()
+        pass
 
     async def on_stop(self):
-        raise NotImplementedError()
+        pass
 
     async def on_seek(self, offset: int):
-        raise NotImplementedError()
+        pass
 
     def set_property(self, name: PropertyName, value: Any):
-        raise NotImplementedError()
+        pass
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
-        raise NotImplementedError()
+        pass
