@@ -10,13 +10,15 @@ repository = "https://github.com/BruceZhang1993/aionowplaying"
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
-dbus-next = "*"
 pydantic = "*"
+dbus-next = { version = "*", platform = "linux" }
 winrt = { version = "*", platform = "win32" }
+pyobjc = { version = "*", platform = "darwin" }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
 pytest-asyncio = "*"
+poetry2setup = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
