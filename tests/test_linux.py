@@ -1,6 +1,9 @@
-import asyncio
-
+import sys
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform != "linux", reason=f'These tests should be skipped on {sys.platform}')
+
+import asyncio
 from dbus_next.aio import MessageBus
 
 from aionowplaying import NowPlayingInterface, LoopStatus, PropertyName
