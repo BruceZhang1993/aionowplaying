@@ -4,6 +4,11 @@ from typing import Any, List
 from pydantic import BaseModel
 
 
+class TrackListPropertyName(str, Enum):
+    Tracks = 'Tracks'
+    CanEditTracks = 'CanEditTracks'
+
+
 class PropertyName(str, Enum):
     CanQuit = "CanQuit"
     CanSetFullscreen = "CanSetFullscreen"
@@ -44,6 +49,11 @@ class LoopStatus(str, Enum):
     None_ = "None"
     Track = "Track"
     Playlist = "Playlist"
+
+
+class TrackListProperties(BaseModel):
+    Tracks: List[str] = []
+    CanEditTracks: bool = False
 
 
 class PlayerProperties(BaseModel):
@@ -141,8 +151,20 @@ class BaseInterface:
     async def on_seek(self, offset: int):
         pass
 
+    async def on_open_uri(self, uri: str):
+        pass
+
+    async def on_set_position(self, track_id: str, position: int):
+        pass
+
+    async def seeked(self, position: int):
+        pass
+
     def set_property(self, name: PropertyName, value: Any):
         pass
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
+        pass
+
+    def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
         pass

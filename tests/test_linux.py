@@ -53,6 +53,7 @@ class MyNowPlayingInterface(NowPlayingInterface):
     async def on_seek(self, offset: int):
         assert isinstance(offset, int)
         assert offset == 0
+        await self.seeked(10)
 
 
 @pytest.yield_fixture(scope='session')
@@ -118,3 +119,15 @@ class TestNowPlaying:
         await asyncio.sleep(1)
         await iface.call_raise()
         await iface.call_quit()
+
+    async def test_signals(self, interface, msgbus):
+        async def on_seeked(position: int):
+            assert position == 10
+
+        bus, introspection = msgbus
+        proxy_object = bus.get_proxy_object('org.mpris.MediaPlayer2.TestNowPlayingPlayer', '/org/mpris/MediaPlayer2',
+                                            introspection)
+        iface = proxy_object.get_interface('org.mpris.MediaPlayer2.Player')
+        iface.on_seeked(on_seeked)
+        await asyncio.sleep(1)
+        iface.call_seek(10)

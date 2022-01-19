@@ -2,10 +2,10 @@ from typing import Any
 
 from dbus_next import PropertyAccess, Variant
 from dbus_next.aio import MessageBus
-from dbus_next.service import ServiceInterface, dbus_property, method
+from dbus_next.service import ServiceInterface, dbus_property, method, signal
 
 from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProperties, PlaybackProperties, \
-    PlaybackPropertyName, LoopStatus
+    PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties
 
 
 class MprisPlayerServiceInterface(ServiceInterface):
@@ -112,6 +112,10 @@ class MprisPlayerServiceInterface(ServiceInterface):
     def can_control(self) -> 'b':
         return self._properties.CanControl
 
+    @signal(name='Seeked')
+    async def seeked(self, position: int) -> 'x':
+        return position
+
     @method(name="Next")
     async def next(self):
         if self._properties.CanGoNext:
@@ -146,6 +150,15 @@ class MprisPlayerServiceInterface(ServiceInterface):
     async def seek(self, offset: 'x'):
         if self._properties.CanSeek:
             await self._it.on_seek(offset)
+
+    @method(name="OpenUri")
+    async def open_uri(self, uri: 's'):
+        await self._it.on_open_uri(uri)
+
+    @method(name="SetPosition")
+    async def set_position(self, track_id: 'o', position: 'x'):
+        if self._properties.CanSeek:
+            await self._it.on_set_position(track_id, position)
 
 
 class MprisServiceInterface(ServiceInterface):
@@ -210,21 +223,47 @@ class MprisServiceInterface(ServiceInterface):
         setattr(self._properties, name, value)
 
 
+class MprisTracklistServiceInterface(ServiceInterface):
+    def __init__(self, bus_name: str, it: 'Mpris2Interface' = None):
+        super().__init__(bus_name)
+        self._properties = TrackListProperties()
+        self._it = it
+
+    def set_property(self, name: str, value: Any):
+        setattr(self._properties, name, value)
+
+    @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.CanEditTracks.value)
+    def can_edit_tracks(self) -> 'b':
+        return self._properties.CanEditTracks
+
+    @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.Tracks.value)
+    def tracks(self) -> 'ao':
+        return self._properties.Tracks
+
+
 class Mpris2Interface(BaseInterface):
     def __init__(self, name: str):
         super().__init__(name)
         self._bus_name = f'org.mpris.MediaPlayer2.{name}'
         self._entry_name = 'org.mpris.MediaPlayer2'
         self._player_entry_name = 'org.mpris.MediaPlayer2.Player'
+        self._player_tracklist_name = 'org.mpris.MediaPlayer2.TrackList'
         self._object_path = '/org/mpris/MediaPlayer2'
         self._bus = MprisServiceInterface(self._entry_name, it=self)
         self._player_bus = MprisPlayerServiceInterface(self._player_entry_name, it=self)
+        self._tracklist_bus = MprisTracklistServiceInterface(self._player_tracklist_name, it=self)
 
     def set_property(self, name: PropertyName, value: Any):
         self._bus.set_property(name.value, value)
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
         self._player_bus.set_property(name.value, value)
+
+    def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
+        self._tracklist_bus.set_property(name.value, value)
+
+    async def seeked(self, position: int):
+        await self._player_bus.seeked(position)
 
     async def start(self):
         bus = await MessageBus().connect()
