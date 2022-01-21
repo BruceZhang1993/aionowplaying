@@ -16,6 +16,9 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     def set_property(self, name: str, value: Any):
         setattr(self._properties, name, value)
+        if isinstance(value, PlaybackProperties.MetadataBean):
+            value = value.dbus_value()
+        self.emit_properties_changed({name: value})
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.PlaybackStatus.value)
     def playback_status(self) -> 's':
@@ -50,23 +53,8 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.Metadata.value)
     def metadata(self) -> 'a{sv}':
-        metadata_map = dict()
         metadata = self._properties.Metadata
-        metadata_map['mpris:trackid'] = Variant('s', self._it._bus_name + '/' + metadata.id_)
-        metadata_map['mpris:length'] = Variant('x', metadata.duration)
-        metadata_map['mpris:artUrl'] = Variant('s', metadata.cover)
-        metadata_map['xesam:album'] = Variant('s', metadata.album)
-        metadata_map['xesam:albumArtist'] = Variant('as', metadata.albumArtist)
-        metadata_map['xesam:artist'] = Variant('as', metadata.artist)
-        metadata_map['xesam:asText'] = Variant('s', metadata.lyrics)
-        metadata_map['xesam:comment'] = Variant('as', metadata.comments)
-        metadata_map['xesam:composer'] = Variant('as', metadata.composer)
-        metadata_map['xesam:genre'] = Variant('as', metadata.genre)
-        metadata_map['xesam:lyricist'] = Variant('as', metadata.lyricist)
-        metadata_map['xesam:title'] = Variant('s', metadata.title)
-        metadata_map['xesam:trackNumber'] = Variant('i', metadata.trackNumber)
-        metadata_map['xesam:url'] = Variant('s', metadata.url)
-        return metadata_map
+        return metadata.dbus_value()
 
     @dbus_property(access=PropertyAccess.READWRITE, name=PlaybackPropertyName.Volume.value)
     def volume(self) -> 'd':
@@ -221,6 +209,7 @@ class MprisServiceInterface(ServiceInterface):
 
     def set_property(self, name: str, value: Any):
         setattr(self._properties, name, value)
+        self.emit_properties_changed({name: value})
 
 
 class MprisTracklistServiceInterface(ServiceInterface):

@@ -6,7 +6,8 @@ pytestmark = pytest.mark.skipif(sys.platform != "linux", reason=f'These tests sh
 import asyncio
 from dbus_next.aio import MessageBus
 
-from aionowplaying import NowPlayingInterface, LoopStatus, PropertyName
+from aionowplaying import NowPlayingInterface, LoopStatus, PropertyName, PlaybackPropertyName, PlaybackProperties, \
+    PlaybackStatus
 
 
 class MyNowPlayingInterface(NowPlayingInterface):
@@ -73,7 +74,7 @@ def interface():
     it.set_property(PropertyName.CanRaise, True)
     it.set_property(PropertyName.CanQuit, True)
     task = asyncio.ensure_future(it.start())
-    yield task
+    yield task, it
     task.cancel()
 
 
@@ -86,7 +87,6 @@ async def msgbus():
     bus.disconnect()
 
 
-# noinspection PyUnresolvedReferences
 class TestNowPlaying:
     async def test_properties(self, interface, msgbus):
         bus, introspection = msgbus
@@ -107,8 +107,10 @@ class TestNowPlaying:
         proxy_object = bus.get_proxy_object('org.mpris.MediaPlayer2.TestNowPlayingPlayer', '/org/mpris/MediaPlayer2',
                                             introspection)
         iface = proxy_object.get_interface('org.mpris.MediaPlayer2')
+        # noinspection PyUnresolvedReferences
         await iface.set_fullscreen(True)
         await asyncio.sleep(1)
+        # noinspection PyUnresolvedReferences
         assert await iface.get_fullscreen() is True
 
     async def test_methods(self, interface, msgbus):
@@ -117,7 +119,9 @@ class TestNowPlaying:
                                             introspection)
         iface = proxy_object.get_interface('org.mpris.MediaPlayer2')
         await asyncio.sleep(1)
+        # noinspection PyUnresolvedReferences
         await iface.call_raise()
+        # noinspection PyUnresolvedReferences
         await iface.call_quit()
 
     async def test_signals(self, interface, msgbus):
@@ -128,6 +132,30 @@ class TestNowPlaying:
         proxy_object = bus.get_proxy_object('org.mpris.MediaPlayer2.TestNowPlayingPlayer', '/org/mpris/MediaPlayer2',
                                             introspection)
         iface = proxy_object.get_interface('org.mpris.MediaPlayer2.Player')
+        # noinspection PyUnresolvedReferences
         iface.on_seeked(on_seeked)
         await asyncio.sleep(1)
+        # noinspection PyUnresolvedReferences
         iface.call_seek(10)
+
+    async def test_metadata(self, interface, msgbus):
+        bus, introspection = msgbus
+        _, it = interface
+        proxy_object = bus.get_proxy_object('org.mpris.MediaPlayer2.TestNowPlayingPlayer', '/org/mpris/MediaPlayer2',
+                                            introspection)
+        iface = proxy_object.get_interface('org.mpris.MediaPlayer2.Player')
+        metadata = PlaybackProperties.MetadataBean()
+        metadata.title = 'Test Title'
+        metadata.duration = 10000
+        metadata.cover = 'file:///home/bruce/Pictures/photo_2021-12-24_01-04-55.jpg'
+        metadata.genre = ['Pop']
+        metadata.artist = ['Azusa']
+        metadata.album = 'Test Album'
+        it.set_playback_property(PlaybackPropertyName.CanPlay, True)
+        it.set_playback_property(PlaybackPropertyName.CanPause, True)
+        it.set_playback_property(PlaybackPropertyName.CanControl, True)
+        it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
+        it.set_playback_property(PlaybackPropertyName.Metadata, metadata)
+        await asyncio.sleep(1)
+        # noinspection PyUnresolvedReferences
+        print(await iface.get_metadata())

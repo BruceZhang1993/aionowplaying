@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, List
 
+from dbus_next import Variant
 from pydantic import BaseModel
 
 
@@ -84,6 +85,25 @@ class PlaybackProperties(BaseModel):
         title: str = "Unknown"
         trackNumber: int = 0
         url: str = ''
+
+        def dbus_value(self) -> dict:
+            metadata_map = dict()
+            metadata_map['mpris:trackid'] = Variant('s', self.id_)
+            metadata_map['mpris:length'] = Variant('x', self.duration)
+            metadata_map['mpris:artUrl'] = Variant('s', self.cover)
+            metadata_map['xesam:album'] = Variant('s', self.album)
+            metadata_map['xesam:albumArtist'] = Variant('as', self.albumArtist)
+            metadata_map['xesam:artist'] = Variant('as', self.artist)
+            metadata_map['xesam:asText'] = Variant('s', self.lyrics)
+            metadata_map['xesam:comment'] = Variant('as', self.comments)
+            metadata_map['xesam:composer'] = Variant('as', self.composer)
+            metadata_map['xesam:genre'] = Variant('as', self.genre)
+            metadata_map['xesam:lyricist'] = Variant('as', self.lyricist)
+            metadata_map['xesam:title'] = Variant('s', self.title)
+            metadata_map['xesam:trackNumber'] = Variant('i', self.trackNumber)
+            metadata_map['xesam:url'] = Variant('s', self.url)
+            return metadata_map
+
 
     PlaybackStatus: 'PlaybackStatus' = PlaybackStatus.Stopped
     LoopStatus: 'LoopStatus' = LoopStatus.None_
