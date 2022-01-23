@@ -9,7 +9,7 @@ readme = "README.md"
 repository = "https://github.com/BruceZhang1993/aionowplaying"
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.10"
+python = ">=3.7,<3.11"
 pydantic = "*"
 dbus-next = { version = "*", platform = "linux" }
 winrt = { version = "*", platform = "win32" }

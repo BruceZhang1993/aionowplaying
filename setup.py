@@ -29,7 +29,7 @@ setup_kwargs = {
     'package_data': package_data,
     'install_requires': install_requires,
     'extras_require': extras_require,
-    'python_requires': '>=3.7,<3.10',
+    'python_requires': '>=3.7,<3.11',
 }
 
 
