@@ -8,6 +8,26 @@ from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProp
     PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties
 
 
+class DBusMetaBean(PlaybackProperties.MetadataBean):
+    def value(self) -> dict:
+        metadata_map = dict()
+        metadata_map['mpris:trackid'] = Variant('s', self.id_)
+        metadata_map['mpris:length'] = Variant('x', self.duration)
+        metadata_map['mpris:artUrl'] = Variant('s', self.cover)
+        metadata_map['xesam:album'] = Variant('s', self.album)
+        metadata_map['xesam:albumArtist'] = Variant('as', self.albumArtist)
+        metadata_map['xesam:artist'] = Variant('as', self.artist)
+        metadata_map['xesam:asText'] = Variant('s', self.lyrics)
+        metadata_map['xesam:comment'] = Variant('as', self.comments)
+        metadata_map['xesam:composer'] = Variant('as', self.composer)
+        metadata_map['xesam:genre'] = Variant('as', self.genre)
+        metadata_map['xesam:lyricist'] = Variant('as', self.lyricist)
+        metadata_map['xesam:title'] = Variant('s', self.title)
+        metadata_map['xesam:trackNumber'] = Variant('i', self.trackNumber)
+        metadata_map['xesam:url'] = Variant('s', self.url)
+        return metadata_map
+
+
 class MprisPlayerServiceInterface(ServiceInterface):
     def __init__(self, bus_name: str, it: 'Mpris2Interface' = None):
         super().__init__(bus_name)
@@ -16,9 +36,12 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     def set_property(self, name: str, value: Any):
         setattr(self._properties, name, value)
+        result = dict()
         if isinstance(value, PlaybackProperties.MetadataBean):
-            value = value.dbus_value()
-        self.emit_properties_changed({name: value})
+            value.__class__ = DBusMetaBean
+            value: DBusMetaBean
+            result = value.value()
+        self.emit_properties_changed({name: result})
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.PlaybackStatus.value)
     def playback_status(self) -> 's':
