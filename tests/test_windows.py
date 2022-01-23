@@ -8,7 +8,17 @@ from aionowplaying import NowPlayingInterface, PlaybackPropertyName, PlaybackSta
 
 
 class MyWindowsNowPlayingInterface(NowPlayingInterface):
-    pass
+    async def on_play(self):
+        print('on_play')
+
+    async def on_pause(self):
+        print('on_pause')
+
+    async def on_next(self):
+        print('on_next')
+
+    async def on_previous(self):
+        print('on_preview')
 
 
 @pytest.yield_fixture(scope='session')

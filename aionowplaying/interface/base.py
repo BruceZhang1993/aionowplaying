@@ -1,7 +1,5 @@
 from enum import Enum
 from typing import Any, List
-
-from dbus_next import Variant
 from pydantic import BaseModel
 
 

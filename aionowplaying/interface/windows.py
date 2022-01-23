@@ -21,15 +21,19 @@ class WindowsInterface(BaseInterface):
         self._controls: SystemMediaTransportControls = self._player.system_media_transport_controls
         self._updater: SystemMediaTransportControlsDisplayUpdater = self._controls.display_updater
         self._timeline = SystemMediaTransportControlsTimelineProperties()
-        self._controls.auto_repeat_mode_change_requested += self.auto_repeat_mode_change_requested
-        self._controls.button_pressed += self.button_pressed
+        self._controls.add_auto_repeat_mode_change_requested(self.auto_repeat_mode_change_requested)
+        self._controls.add_button_pressed(self.button_pressed)
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
         if button == SystemMediaTransportControlsButton.PLAY and self._playback_properties.CanPlay:
             asyncio.run(self.on_play())
+            self._controls.playback_status = MediaPlaybackStatus.PLAYING
+            self._playback_properties.PlaybackStatus = PlaybackStatus.Playing
         if button == SystemMediaTransportControlsButton.PAUSE and self._playback_properties.CanPause:
             asyncio.run(self.on_pause())
+            self._controls.playback_status = MediaPlaybackStatus.PAUSED
+            self._playback_properties.PlaybackStatus = PlaybackStatus.Paused
         if button == SystemMediaTransportControlsButton.NEXT and self._playback_properties.CanGoNext:
             asyncio.run(self.on_next())
         if button == SystemMediaTransportControlsButton.PREVIOUS and self._playback_properties.CanGoPrevious:
