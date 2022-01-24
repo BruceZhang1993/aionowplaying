@@ -105,43 +105,106 @@ class BaseInterface:
     def __init__(self, name: str):
         pass
 
-    def start(self):
+    async def start(self):
+        """
+        Call this method to start nowplaying backend.
+        Wrap with :meth:`asyncio.ensure_future` if you want to run in background.
+        """
         pass
 
     async def on_fullscreen(self, fullscreen: bool):
+        """
+        This will be called when nowplaying backend want to set player fullscreen state.
+        This will only be called if you set :attr:`PlayerProperties.CanSetFullscreen` to True.
+        :param fullscreen: True if fullscreen, False otherwise.
+        :type fullscreen: bool
+        """
         pass
 
     async def on_raise(self):
+        """
+        This will be called when nowplaying backend want to raise player window.
+        This will only be called if you set :attr:`PlayerProperties.CanRaise` to True.
+        """
         pass
 
     async def on_quit(self):
+        """
+        This will be called when nowplaying backend want to quit player.
+        This will only be called if you set :attr:`PlayerProperties.CanQuit` to True.
+        """
         pass
 
     async def on_loop_status(self, status: LoopStatus):
+        """
+        This will be called when nowplaying backend want to set loop status.
+        This will only be called if you set :attr:`PlaybackProperties.CanControl` to True.
+        :param status: Loop status.
+        :type status: LoopStatus
+        """
         pass
 
     async def on_rate(self, rate: float):
+        """
+        This will be called when nowplaying backend want to set playback rate.
+        The rate is a float value between :attr:`PlaybackProperties.MinimumRate`
+        and :attr:`PlaybackProperties.MaximumRate`.
+        :param rate: Playback rate.
+        :type rate: float
+        """
         pass
 
     async def on_shuffle(self, shuffle: bool):
+        """
+        This will be called when nowplaying backend want to set shuffle status.
+        This will only be called if you set :attr:`PlaybackProperties.CanControl` to True.
+        :param shuffle: True if shuffle, False otherwise.
+        :type shuffle: bool
+        """
         pass
 
     async def on_volume(self, volume: float):
+        """
+        This will be called when nowplaying backend want to set playback volume.
+        This will only be called if you set :attr:`PlaybackProperties.CanControl` to True.
+        :param volume: Volume value between 0.0 and 1.0 (both inclusive).
+        :type volume: float
+        """
         pass
 
     async def on_next(self):
+        """
+        This will be called when nowplaying backend want to play next track.
+        This will only be called if you set :attr:`PlaybackProperties.CanGoNext` to True.
+        """
         pass
 
     async def on_previous(self):
+        """
+        This will be called when nowplaying backend want to play previous track.
+        This will only be called if you set :attr:`PlaybackProperties.CanGoPrevious` to True.
+        """
         pass
 
     async def on_pause(self):
+        """
+        This will be called when nowplaying backend want to pause playback.
+        This will only be called if you set :attr:`PlaybackProperties.CanPause` to True.
+        """
         pass
 
     async def on_play_pause(self):
+        """
+        This will be called when nowplaying backend want to play or pause playback.
+        This will only be called if you set :attr:`PlaybackProperties.CanPause` to True.
+        """
         pass
 
     async def on_play(self):
+        """
+        This will be called when nowplaying backend want to play playback.
+        This will only be called if you set :attr:`PlaybackProperties.CanPlay` to True.
+        """
         pass
 
     async def on_stop(self):

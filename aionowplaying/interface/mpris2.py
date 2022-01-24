@@ -53,8 +53,9 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     @loop_status.setter
     async def loop_status(self, value: 's'):
-        await self._it.on_loop_status(LoopStatus(value))
-        self._properties.LoopStatus = LoopStatus(value)
+        if self._properties.CanControl:
+            await self._it.on_loop_status(LoopStatus(value))
+            self._properties.LoopStatus = LoopStatus(value)
 
     @dbus_property(access=PropertyAccess.READWRITE, name=PlaybackPropertyName.Rate.value)
     def rate(self) -> 'd':
@@ -71,8 +72,9 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     @shuffle.setter
     async def shuffle(self, value: 'b'):
-        await self._it.on_shuffle(value)
-        self._properties.Shuffle = value
+        if self._properties.CanControl:
+            await self._it.on_shuffle(value)
+            self._properties.Shuffle = value
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.Metadata.value)
     def metadata(self) -> 'a{sv}':
@@ -85,7 +87,9 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     @volume.setter
     async def volume(self, value: 'd'):
-        await self._it.on_volume(value)
+        if self._properties.CanControl:
+            await self._it.on_volume(value)
+            self._properties.Volume = value
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.Position.value)
     def position(self) -> 'x':
