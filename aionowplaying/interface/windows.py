@@ -1,11 +1,13 @@
 import asyncio
 from typing import Any
 
-from winrt.windows.foundation import Uri
+from winrt.windows.foundation import Uri, TimeSpan
 from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
     SystemMediaTransportControlsDisplayUpdater, MediaPlaybackStatus, MediaPlaybackType, MediaPlaybackAutoRepeatMode, \
     AutoRepeatModeChangeRequestedEventArgs, SystemMediaTransportControlsButtonPressedEventArgs, \
-    SystemMediaTransportControlsButton
+    SystemMediaTransportControlsButton, PlaybackPositionChangeRequestedEventArgs, PlaybackRateChangeRequestedEventArgs, \
+    SystemMediaTransportControlsPropertyChangedEventArgs, SystemMediaTransportControlsProperty, \
+    ShuffleEnabledChangeRequestedEventArgs
 from winrt.windows.media.playback import MediaPlayer
 from winrt.windows.storage.streams import RandomAccessStreamReference
 
@@ -23,6 +25,29 @@ class WindowsInterface(BaseInterface):
         self._timeline = SystemMediaTransportControlsTimelineProperties()
         self._controls.add_auto_repeat_mode_change_requested(self.auto_repeat_mode_change_requested)
         self._controls.add_button_pressed(self.button_pressed)
+        self._controls.add_playback_position_change_requested(self.playback_position_change_requested)
+        self._controls.add_playback_rate_change_requested(self.playback_rate_change_requested)
+        self._controls.add_property_changed(self.property_changed)
+        self._controls.add_shuffle_enabled_change_requested(self.shuffle_change_requested)
+
+    def shuffle_change_requested(self, _, args: ShuffleEnabledChangeRequestedEventArgs):
+        shuffle_enabled: bool = args.requested_shuffle_enabled
+        asyncio.run(self.on_shuffle(shuffle_enabled))
+
+    def property_changed(self, _, args: SystemMediaTransportControlsPropertyChangedEventArgs):
+        property_: SystemMediaTransportControlsProperty = args.property
+        if property_ == SystemMediaTransportControlsProperty.SOUND_LEVEL:
+            asyncio.run(self.on_volume(self._controls.sound_level))
+
+    def playback_rate_change_requested(self, _, args: PlaybackRateChangeRequestedEventArgs):
+        rate: float = args.requested_playback_rate
+        asyncio.run(self.on_rate(rate))
+
+    def playback_position_change_requested(self, _, args: PlaybackPositionChangeRequestedEventArgs):
+        position: TimeSpan = args.requested_playback_position
+        print(position, dir(position))
+        if self._playback_properties.CanSeek:
+            asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, position.duration))
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
