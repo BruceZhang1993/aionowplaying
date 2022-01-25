@@ -116,8 +116,12 @@ class WindowsInterface(BaseInterface):
             elif value == LoopStatus.Track:
                 self._controls.auto_repeat_mode = MediaPlaybackAutoRepeatMode.TRACK
             self._playback_properties.LoopStatus = value
+        elif name == PlaybackPropertyName.Position:
+            self._timeline.position = TimeSpan(value)
+            self._controls.update_timeline_properties(self._timeline)
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
+        # update media info
         if value.media_type == MediaType.Image:
             self._updater.type = MediaPlaybackType.IMAGE
         elif value.media_type == MediaType.Video:
@@ -131,6 +135,12 @@ class WindowsInterface(BaseInterface):
         self._updater.music_properties.genres = value.genre
         self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.url))
         self._updater.update()
+        # update timeline
+        self._timeline.start_time = TimeSpan(0)
+        self._timeline.end_time = TimeSpan(value.duration)
+        self._timeline.min_seek_time = TimeSpan(0)
+        self._timeline.max_seek_time = TimeSpan(value.duration)
+        self._controls.update_timeline_properties(self._timeline)
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
         pass
