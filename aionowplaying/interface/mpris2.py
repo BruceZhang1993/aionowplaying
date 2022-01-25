@@ -175,6 +175,9 @@ class MprisPlayerServiceInterface(ServiceInterface):
         if self._properties.CanSeek:
             await self._it.on_set_position(track_id, position)
 
+    def get_property(self, key):
+        return getattr(self._properties, key)
+
 
 class MprisServiceInterface(ServiceInterface):
     def __init__(self, bus_name: str, it: 'Mpris2Interface' = None):
@@ -238,6 +241,9 @@ class MprisServiceInterface(ServiceInterface):
         setattr(self._properties, name, value)
         self.emit_properties_changed({name: value})
 
+    def get_property(self, key):
+        return getattr(self._properties, key)
+
 
 class MprisTracklistServiceInterface(ServiceInterface):
     def __init__(self, bus_name: str, it: 'Mpris2Interface' = None):
@@ -255,6 +261,9 @@ class MprisTracklistServiceInterface(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.Tracks.value)
     def tracks(self) -> 'ao':
         return self._properties.Tracks
+
+    def get_property(self, key):
+        return getattr(self._properties, key)
 
 
 class Mpris2Interface(BaseInterface):
@@ -277,6 +286,15 @@ class Mpris2Interface(BaseInterface):
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
         self._tracklist_bus.set_property(name.value, value)
+
+    def get_property(self, name: PropertyName) -> Any:
+        return self._bus.get_property(name.value)
+
+    def get_playback_property(self, name: PlaybackPropertyName) -> Any:
+        return self._player_bus.get_property(name.value)
+
+    def get_tracklist_property(self, name: TrackListPropertyName) -> Any:
+        return self._tracklist_bus.get_property(name.value)
 
     async def seeked(self, position: int):
         await self._player_bus.seeked(position)

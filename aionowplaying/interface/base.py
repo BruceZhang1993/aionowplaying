@@ -198,7 +198,12 @@ class BaseInterface:
         This will be called when nowplaying backend want to play or pause playback.
         This will only be called if you set :attr:`PlaybackProperties.CanPause` to True.
         """
-        pass
+        if self.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing:
+            await self.on_pause()
+            self.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Paused)
+        else:
+            await self.on_play()
+            self.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
 
     async def on_play(self):
         """
@@ -229,4 +234,13 @@ class BaseInterface:
         pass
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
+        pass
+
+    def get_property(self, name: PropertyName) -> Any:
+        pass
+
+    def get_playback_property(self, name: PlaybackPropertyName) -> Any:
+        pass
+
+    def get_tracklist_property(self, name: TrackListPropertyName) -> Any:
         pass

@@ -127,6 +127,9 @@ class WindowsInterface(BaseInterface):
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
         pass
 
+    def get_playback_property(self, name: PlaybackPropertyName) -> Any:
+        return getattr(self._playback_properties, name.value)
+
     async def start(self):
         while True:
             await asyncio.sleep(1)
