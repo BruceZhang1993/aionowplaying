@@ -50,6 +50,12 @@ class LoopStatus(str, Enum):
     Playlist = "Playlist"
 
 
+class MediaType(str, Enum):
+    Music = "Music"
+    Video = "Video"
+    Image = "Image"
+
+
 class TrackListProperties(BaseModel):
     Tracks: List[str] = []
     CanEditTracks: bool = False
@@ -70,6 +76,7 @@ class PlayerProperties(BaseModel):
 class PlaybackProperties(BaseModel):
     class MetadataBean(BaseModel):
         id_: str = ''
+        media_type: 'MediaType' = MediaType.Music
         duration: int = 0  # in microseconds
         cover: str = ''
         album: str = ''

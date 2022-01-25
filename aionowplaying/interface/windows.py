@@ -12,7 +12,8 @@ from winrt.windows.media.playback import MediaPlayer
 from winrt.windows.storage.streams import RandomAccessStreamReference
 
 from aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
-from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus
+from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
+    MediaType
 
 
 class WindowsInterface(BaseInterface):
@@ -117,10 +118,17 @@ class WindowsInterface(BaseInterface):
             self._playback_properties.LoopStatus = value
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
-        self._updater.type = MediaPlaybackType.MUSIC
+        if value.media_type == MediaType.Image:
+            self._updater.type = MediaPlaybackType.IMAGE
+        elif value.media_type == MediaType.Video:
+            self._updater.type = MediaPlaybackType.Video
+        else:
+            self._updater.type = MediaPlaybackType.MUSIC
+        self._updater.app_media_id = value.id_
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
+        self._updater.music_properties.genres = value.genre
         self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.url))
         self._updater.update()
 
