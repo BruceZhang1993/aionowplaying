@@ -37,10 +37,9 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     def set_property(self, name: str, value: Any):
         setattr(self._properties, name, value)
-        result = dict()
         if isinstance(value, PlaybackProperties.MetadataBean):
-            result = DBusBeanMapper.metadata(value)
-        self.emit_properties_changed({name: result})
+            value = DBusBeanMapper.metadata(value)
+        self.emit_properties_changed({name: value})
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.PlaybackStatus.value)
     def playback_status(self) -> 's':
