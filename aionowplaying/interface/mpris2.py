@@ -8,23 +8,24 @@ from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProp
     PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties
 
 
-class DBusMetaBean(PlaybackProperties.MetadataBean):
-    def value(self) -> dict:
+class DBusBeanMapper:
+    @staticmethod
+    def metadata(metadata: PlaybackProperties.MetadataBean) -> dict:
         metadata_map = dict()
-        metadata_map['mpris:trackid'] = Variant('s', self.id_)
-        metadata_map['mpris:length'] = Variant('x', self.duration)
-        metadata_map['mpris:artUrl'] = Variant('s', self.cover)
-        metadata_map['xesam:album'] = Variant('s', self.album)
-        metadata_map['xesam:albumArtist'] = Variant('as', self.albumArtist)
-        metadata_map['xesam:artist'] = Variant('as', self.artist)
-        metadata_map['xesam:asText'] = Variant('s', self.lyrics)
-        metadata_map['xesam:comment'] = Variant('as', self.comments)
-        metadata_map['xesam:composer'] = Variant('as', self.composer)
-        metadata_map['xesam:genre'] = Variant('as', self.genre)
-        metadata_map['xesam:lyricist'] = Variant('as', self.lyricist)
-        metadata_map['xesam:title'] = Variant('s', self.title)
-        metadata_map['xesam:trackNumber'] = Variant('i', self.trackNumber)
-        metadata_map['xesam:url'] = Variant('s', self.url)
+        metadata_map['mpris:trackid'] = Variant('s', metadata.id_)
+        metadata_map['mpris:length'] = Variant('x', metadata.duration)
+        metadata_map['mpris:artUrl'] = Variant('s', metadata.cover)
+        metadata_map['xesam:album'] = Variant('s', metadata.album)
+        metadata_map['xesam:albumArtist'] = Variant('as', metadata.albumArtist)
+        metadata_map['xesam:artist'] = Variant('as', metadata.artist)
+        metadata_map['xesam:asText'] = Variant('s', metadata.lyrics)
+        metadata_map['xesam:comment'] = Variant('as', metadata.comments)
+        metadata_map['xesam:composer'] = Variant('as', metadata.composer)
+        metadata_map['xesam:genre'] = Variant('as', metadata.genre)
+        metadata_map['xesam:lyricist'] = Variant('as', metadata.lyricist)
+        metadata_map['xesam:title'] = Variant('s', metadata.title)
+        metadata_map['xesam:trackNumber'] = Variant('i', metadata.trackNumber)
+        metadata_map['xesam:url'] = Variant('s', metadata.url)
         return metadata_map
 
 
@@ -38,9 +39,7 @@ class MprisPlayerServiceInterface(ServiceInterface):
         setattr(self._properties, name, value)
         result = dict()
         if isinstance(value, PlaybackProperties.MetadataBean):
-            value.__class__ = DBusMetaBean
-            value: DBusMetaBean
-            result = value.value()
+            result = DBusBeanMapper.metadata(value)
         self.emit_properties_changed({name: result})
 
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.PlaybackStatus.value)
@@ -79,7 +78,7 @@ class MprisPlayerServiceInterface(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.Metadata.value)
     def metadata(self) -> 'a{sv}':
         metadata = self._properties.Metadata
-        return metadata.dbus_value()
+        return DBusBeanMapper.metadata(metadata)
 
     @dbus_property(access=PropertyAccess.READWRITE, name=PlaybackPropertyName.Volume.value)
     def volume(self) -> 'd':
