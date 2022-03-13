@@ -17,7 +17,7 @@ extras_require = \
 
 setup_kwargs = {
     'name': 'aionowplaying',
-    'version': '0.9.1',
+    'version': '0.9.2',
     'description': 'A cross-platform Now Playing client',
     'long_description': '',
     'author': 'Bruce Zhang',
