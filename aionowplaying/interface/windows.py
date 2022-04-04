@@ -135,7 +135,8 @@ class WindowsInterface(BaseInterface):
         self._updater.music_properties.album_title = value.album
         self._updater.music_properties.genres: IVector
         self._updater.music_properties.genres.replace_all(value.genre)
-        self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.url))
+        if value.url is not None and value.url != '':
+            self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.url))
         self._updater.update()
         # update timeline
         self._timeline.start_time = TimeSpan(0)
