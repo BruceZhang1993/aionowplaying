@@ -119,6 +119,9 @@ class BaseInterface:
         """
         pass
 
+    async def stop(self):
+        pass
+
     async def on_fullscreen(self, fullscreen: bool):
         """
         This will be called when nowplaying backend want to set player fullscreen state.

@@ -50,4 +50,8 @@ class TestWindowsNowPlaying:
         metadata.title = 'Azusa Music'
         metadata.url = 'https://img.moegirl.org.cn/common/3/3b/%E9%80%8F%E6%98%8E%E7%AB%8B%E7%BB%98.png'
         interface.set_playback_property(PlaybackPropertyName.Metadata, metadata)
+        task = asyncio.ensure_future(interface.start())
+        # Test running for 20 seconds
         await asyncio.sleep(20)
+        await interface.stop()
+        await task

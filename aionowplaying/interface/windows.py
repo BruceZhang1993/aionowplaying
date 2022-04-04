@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 from winrt.windows.foundation import Uri, TimeSpan
+from winrt.windows.foundation.collections import IVector
 from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
     SystemMediaTransportControlsDisplayUpdater, MediaPlaybackStatus, MediaPlaybackType, MediaPlaybackAutoRepeatMode, \
     AutoRepeatModeChangeRequestedEventArgs, SystemMediaTransportControlsButtonPressedEventArgs, \
@@ -19,6 +20,7 @@ from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, 
 class WindowsInterface(BaseInterface):
     def __init__(self, name):
         super(WindowsInterface, self).__init__(name)
+        self._running = True
         self._playback_properties = PlaybackProperties()
         self._player = MediaPlayer()
         self._controls: SystemMediaTransportControls = self._player.system_media_transport_controls
@@ -46,7 +48,6 @@ class WindowsInterface(BaseInterface):
 
     def playback_position_change_requested(self, _, args: PlaybackPositionChangeRequestedEventArgs):
         position: TimeSpan = args.requested_playback_position
-        print(position, dir(position))
         if self._playback_properties.CanSeek:
             asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, position.duration))
 
@@ -125,14 +126,15 @@ class WindowsInterface(BaseInterface):
         if value.media_type == MediaType.Image:
             self._updater.type = MediaPlaybackType.IMAGE
         elif value.media_type == MediaType.Video:
-            self._updater.type = MediaPlaybackType.Video
+            self._updater.type = MediaPlaybackType.VIDEO
         else:
             self._updater.type = MediaPlaybackType.MUSIC
         self._updater.app_media_id = value.id_
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
-        self._updater.music_properties.genres = value.genre
+        self._updater.music_properties.genres: IVector
+        self._updater.music_properties.genres.replace_all(value.genre)
         self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.url))
         self._updater.update()
         # update timeline
@@ -149,5 +151,13 @@ class WindowsInterface(BaseInterface):
         return getattr(self._playback_properties, name.value)
 
     async def start(self):
-        while True:
+        # Don't need a background server for Windows
+        while self._running:
             await asyncio.sleep(1)
+        try:
+            self._player.close()
+        except:
+            pass
+
+    async def stop(self):
+        self._running = False
