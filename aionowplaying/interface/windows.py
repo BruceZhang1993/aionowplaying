@@ -59,9 +59,9 @@ class WindowsInterface(BaseInterface):
         position: TimeSpan = args.requested_playback_position
         if self._playback_properties.CanSeek:
             if asyncio.iscoroutinefunction(self.on_set_position):
-                asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 1000)))
+                asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000)))
             else:
-                self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 1000))
+                self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000))
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
@@ -145,7 +145,7 @@ class WindowsInterface(BaseInterface):
                 self._controls.auto_repeat_mode = MediaPlaybackAutoRepeatMode.TRACK
             self._playback_properties.LoopStatus = value
         elif name == PlaybackPropertyName.Position:
-            self._timeline.position = TimeSpan(value * 1000)
+            self._timeline.position = TimeSpan(value * 10000)
             self._controls.update_timeline_properties(self._timeline)
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
@@ -167,9 +167,9 @@ class WindowsInterface(BaseInterface):
         self._updater.update()
         # update timeline
         self._timeline.start_time = TimeSpan(0)
-        self._timeline.end_time = TimeSpan(value.duration * 1000)
+        self._timeline.end_time = TimeSpan(value.duration * 10000)
         self._timeline.min_seek_time = TimeSpan(0)
-        self._timeline.max_seek_time = TimeSpan(value.duration * 1000)
+        self._timeline.max_seek_time = TimeSpan(value.duration * 10000)
         self._controls.update_timeline_properties(self._timeline)
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
