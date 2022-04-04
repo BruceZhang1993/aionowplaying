@@ -35,36 +35,60 @@ class WindowsInterface(BaseInterface):
 
     def shuffle_change_requested(self, _, args: ShuffleEnabledChangeRequestedEventArgs):
         shuffle_enabled: bool = args.requested_shuffle_enabled
-        asyncio.run(self.on_shuffle(shuffle_enabled))
+        if asyncio.iscoroutinefunction(self.on_shuffle):
+            asyncio.run(self.on_shuffle(shuffle_enabled))
+        else:
+            self.on_shuffle(shuffle_enabled)
 
     def property_changed(self, _, args: SystemMediaTransportControlsPropertyChangedEventArgs):
         property_: SystemMediaTransportControlsProperty = args.property
         if property_ == SystemMediaTransportControlsProperty.SOUND_LEVEL:
-            asyncio.run(self.on_volume(self._controls.sound_level))
+            if asyncio.iscoroutinefunction(self.on_volume):
+                asyncio.run(self.on_volume(self._controls.sound_level))
+            else:
+                self.on_volume(self._controls.sound_level)
 
     def playback_rate_change_requested(self, _, args: PlaybackRateChangeRequestedEventArgs):
         rate: float = args.requested_playback_rate
-        asyncio.run(self.on_rate(rate))
+        if asyncio.iscoroutinefunction(self.on_rate):
+            asyncio.run(self.on_rate(rate))
+        else:
+            self.on_rate(rate)
 
     def playback_position_change_requested(self, _, args: PlaybackPositionChangeRequestedEventArgs):
         position: TimeSpan = args.requested_playback_position
         if self._playback_properties.CanSeek:
-            asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, position.duration))
+            if asyncio.iscoroutinefunction(self.on_set_position):
+                asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, position.duration))
+            else:
+                self.on_set_position(self._playback_properties.Metadata.id_, position.duration)
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
         if button == SystemMediaTransportControlsButton.PLAY and self._playback_properties.CanPlay:
-            asyncio.run(self.on_play())
+            if asyncio.iscoroutinefunction(self.on_play):
+                asyncio.run(self.on_play())
+            else:
+                self.on_play()
             self._controls.playback_status = MediaPlaybackStatus.PLAYING
             self._playback_properties.PlaybackStatus = PlaybackStatus.Playing
         if button == SystemMediaTransportControlsButton.PAUSE and self._playback_properties.CanPause:
-            asyncio.run(self.on_pause())
+            if asyncio.iscoroutinefunction(self.on_pause):
+                asyncio.run(self.on_pause())
+            else:
+                self.on_pause()
             self._controls.playback_status = MediaPlaybackStatus.PAUSED
             self._playback_properties.PlaybackStatus = PlaybackStatus.Paused
         if button == SystemMediaTransportControlsButton.NEXT and self._playback_properties.CanGoNext:
-            asyncio.run(self.on_next())
+            if asyncio.iscoroutinefunction(self.on_next):
+                asyncio.run(self.on_next())
+            else:
+                self.on_next()
         if button == SystemMediaTransportControlsButton.PREVIOUS and self._playback_properties.CanGoPrevious:
-            asyncio.run(self.on_previous())
+            if asyncio.iscoroutinefunction(self.on_previous):
+                asyncio.run(self.on_previous())
+            else:
+                self.on_previous()
 
     def auto_repeat_mode_change_requested(self, _, args: AutoRepeatModeChangeRequestedEventArgs):
         value = LoopStatus.None_
@@ -73,7 +97,10 @@ class WindowsInterface(BaseInterface):
             value = LoopStatus.Playlist
         elif mode == MediaPlaybackAutoRepeatMode.TRACK:
             value = LoopStatus.Track
-        asyncio.run(self.on_loop_status(value))
+        if asyncio.iscoroutinefunction(self.on_loop_status):
+            asyncio.run(self.on_loop_status(value))
+        else:
+            self.on_loop_status(value)
         self._playback_properties.LoopStatus = value
 
     def set_property(self, name: PropertyName, value: Any):
