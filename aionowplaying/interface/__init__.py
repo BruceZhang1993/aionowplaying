@@ -6,7 +6,8 @@ from aionowplaying.interface.base import BaseInterface
 
 INTERFACES_BY_SYSTEM = {
     'linux': 'aionowplaying.interface.mpris2.Mpris2Interface',
-    'win32': 'aionowplaying.interface.windows.WindowsInterface'
+    'win32': 'aionowplaying.interface.windows.WindowsInterface',
+    'darwin': 'aionowplaying.interface.macos.MacOSInterface',
 }
 
 
