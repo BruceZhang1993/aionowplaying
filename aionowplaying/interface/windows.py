@@ -131,7 +131,7 @@ class WindowsInterface(BaseInterface):
             self._update_metadata(value)
             self._playback_properties.Metadata = value
         elif name == PlaybackPropertyName.Shuffle:
-            self._controls.is_shuffle_enabled = value
+            self._controls.shuffle_enabled = value
             self._playback_properties.Shuffle = value
         elif name == PlaybackPropertyName.Rate:
             self._controls.playback_rate = value
