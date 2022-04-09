@@ -60,8 +60,10 @@ class WindowsInterface(BaseInterface):
         if self._playback_properties.CanSeek:
             if asyncio.iscoroutinefunction(self.on_set_position):
                 asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000)))
+                asyncio.run(self.on_seek(int(position.duration / 10000)))
             else:
                 self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000))
+                self.on_seek(int(position.duration / 10000))
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
