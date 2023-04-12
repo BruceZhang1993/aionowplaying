@@ -13,7 +13,7 @@ repository = "https://github.com/BruceZhang1993/aionowplaying"
 python = ">=3.7,<3.11"
 pydantic = "*"
 dbus-next = { version = "*", platform = "linux" }
-winrt = { version = "*", platform = "win32" }
+winsdk = { version = "*", platform = "win32" }
 pyobjc = { version = "*", platform = "darwin" }
 
 [tool.poetry.dev-dependencies]
