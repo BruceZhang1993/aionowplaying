@@ -1,20 +1,25 @@
 import asyncio
 from typing import Any
+from datetime import timedelta
 
-from winrt.windows.foundation import Uri, TimeSpan
-from winrt.windows.foundation.collections import IVector
-from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
+from winsdk.windows.foundation import Uri
+from winsdk.windows.foundation.collections import IVector
+from winsdk.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
     SystemMediaTransportControlsDisplayUpdater, MediaPlaybackStatus, MediaPlaybackType, MediaPlaybackAutoRepeatMode, \
     AutoRepeatModeChangeRequestedEventArgs, SystemMediaTransportControlsButtonPressedEventArgs, \
     SystemMediaTransportControlsButton, PlaybackPositionChangeRequestedEventArgs, PlaybackRateChangeRequestedEventArgs, \
     SystemMediaTransportControlsPropertyChangedEventArgs, SystemMediaTransportControlsProperty, \
     ShuffleEnabledChangeRequestedEventArgs
-from winrt.windows.media.playback import MediaPlayer
-from winrt.windows.storage.streams import RandomAccessStreamReference
+from winsdk.windows.media.playback import MediaPlayer
+from winsdk.windows.storage.streams import RandomAccessStreamReference
 
 from aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
 from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
     MediaType
+
+
+def TimeSpan(x):
+    return timedelta(microseconds=x/10000)
 
 
 class WindowsInterface(BaseInterface):
@@ -56,7 +61,7 @@ class WindowsInterface(BaseInterface):
             self.on_rate(rate)
 
     def playback_position_change_requested(self, _, args: PlaybackPositionChangeRequestedEventArgs):
-        position: TimeSpan = args.requested_playback_position
+        position = args.requested_playback_position
         if self._playback_properties.CanSeek:
             if asyncio.iscoroutinefunction(self.on_set_position):
                 asyncio.run(self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000)))

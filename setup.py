@@ -13,7 +13,7 @@ install_requires = \
 extras_require = \
 {':sys_platform == "darwin"': ['pyobjc'],
  ':sys_platform == "linux"': ['dbus-next'],
- ':sys_platform == "win32"': ['winrt']}
+ ':sys_platform == "win32"': ['winsdk']}
 
 setup_kwargs = {
     'name': 'aionowplaying',
@@ -34,4 +34,3 @@ setup_kwargs = {
 
 
 setup(**setup_kwargs)
-
