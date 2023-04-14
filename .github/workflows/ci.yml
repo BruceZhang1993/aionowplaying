@@ -26,6 +26,7 @@ jobs:
       - name: Run tests
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
+            apt install -y dbus-x11
             dbus-launch --exit-with-session poetry run pytest -v
           else
             poetry run pytest -v
