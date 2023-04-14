@@ -57,7 +57,7 @@ class MyNowPlayingInterface(NowPlayingInterface):
         await self.seeked(10)
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.fixture(scope='session')
 def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
@@ -136,7 +136,7 @@ class TestNowPlaying:
         iface.on_seeked(on_seeked)
         await asyncio.sleep(1)
         # noinspection PyUnresolvedReferences
-        iface.call_seek(10)
+        await iface.call_seek(10)
 
     async def test_metadata(self, interface, msgbus):
         bus, introspection = msgbus
