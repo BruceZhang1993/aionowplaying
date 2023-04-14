@@ -298,11 +298,14 @@ class Mpris2Interface(BaseInterface):
         await self._player_bus.seeked(position)
 
     async def start(self):
-        bus = await MessageBus().connect()
-        bus.export(self._object_path, self._bus)
-        bus.export(self._object_path, self._player_bus)
-        await bus.request_name(self._bus_name)
-        await bus.wait_for_disconnect()
+        self.dbus = await MessageBus().connect()
+        self.dbus.export(self._object_path, self._bus)
+        self.dbus.export(self._object_path, self._player_bus)
+        await self.dbus.request_name(self._bus_name)
+        await self.dbus.wait_for_disconnect()
+
+    async def stop(self):
+        self.dbus.disconnect()
 
 
 if __name__ == '__main__':
