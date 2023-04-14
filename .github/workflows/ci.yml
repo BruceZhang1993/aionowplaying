@@ -24,4 +24,9 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Run tests
-        run: poetry run pytest -v
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            dbus-launch --exit-with-session poetry run pytest -v
+          else
+            poetry run pytest -v
+          fi
