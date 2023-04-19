@@ -28,6 +28,7 @@ class PlaybackPropertyName(str, Enum):
     Metadata = "Metadata"
     Volume = "Volume"
     Position = "Position"
+    Duration = "Duration"
     MinimumRate = "MinimumRate"
     MaximumRate = "MaximumRate"
     CanGoNext = "CanGoNext"
@@ -98,6 +99,7 @@ class PlaybackProperties(BaseModel):
     Metadata: MetadataBean = MetadataBean()
     Volume: float = 1.0
     Position: int = 0  # in microseconds
+    Duration: int = 0  # in microseconds
     MinimumRate: float = 1.0
     MaximumRate: float = 1.0
     CanGoNext: bool = False
@@ -210,10 +212,8 @@ class BaseInterface:
         """
         if self.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing:
             await self.on_pause()
-            self.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Paused)
         else:
             await self.on_play()
-            self.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
 
     async def on_play(self):
         """
