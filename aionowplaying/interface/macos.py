@@ -1,10 +1,6 @@
 import asyncio
 from typing import Any
 
-from aionowplaying import (
-    BaseInterface, PlaybackPropertyName, PlaybackProperties, PlaybackStatus
-)
-
 from Foundation import NSMutableDictionary
 from MediaPlayer import MPRemoteCommandCenter, MPNowPlayingInfoCenter
 from MediaPlayer import (
@@ -13,6 +9,10 @@ from MediaPlayer import (
     MPMusicPlaybackStateStopped, MPMediaItemPropertyPlaybackDuration,
     MPNowPlayingInfoPropertyPlaybackRate, MPNowPlayingInfoPropertyElapsedPlaybackTime,
     MPRemoteCommandHandlerStatusSuccess, MPNowPlayingInfoPropertyDefaultPlaybackRate,
+)
+
+from aionowplaying import (
+    BaseInterface, PlaybackPropertyName, PlaybackProperties, PlaybackStatus
 )
 
 PlaybackStatusStateMapping = {
