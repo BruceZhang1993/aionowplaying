@@ -10,11 +10,12 @@ readme = "README.md"
 repository = "https://github.com/BruceZhang1993/aionowplaying"
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.11"
+python = ">=3.7,<3.12"
 pydantic = "*"
 dbus-next = { version = "*", platform = "linux" }
 winsdk = { version = "*", platform = "win32" }
-pyobjc = { version = "*", platform = "darwin" }
+pyobjc-framework-MediaPlayer = { version = "*", platform = "darwin" }
+pyobjc-framework-Cocoa = { version = "*", platform = "darwin" }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
