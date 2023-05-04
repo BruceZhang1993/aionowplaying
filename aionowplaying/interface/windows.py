@@ -170,9 +170,9 @@ class WindowsInterface(BaseInterface):
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
-        self._updater.music_properties.genres: IVector
+        # self._updater.music_properties.genres: IVector
         # fixme: implement genres field
-        self._updater.music_properties.genres.replace_all(Array('u', 8))
+        # self._updater.music_properties.genres.replace_all(Array('u', 8))
         if value.cover:  # not None and not empty
             self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.cover))
         self._updater.update()
