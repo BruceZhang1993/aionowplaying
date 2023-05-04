@@ -3,6 +3,7 @@ import threading
 from typing import Any
 from datetime import timedelta
 
+from winsdk.system import Array
 from winsdk.windows.foundation import Uri
 from winsdk.windows.foundation.collections import IVector
 from winsdk.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
@@ -170,7 +171,7 @@ class WindowsInterface(BaseInterface):
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
         self._updater.music_properties.genres: IVector
-        self._updater.music_properties.genres.replace_all(value.genre)
+        self._updater.music_properties.genres.replace_all(Array('P', value.genre))
         if value.cover:  # not None and not empty
             self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.cover))
         self._updater.update()
