@@ -267,6 +267,7 @@ class MprisTracklistServiceInterface(ServiceInterface):
 class Mpris2Interface(BaseInterface):
     def __init__(self, name: str):
         super().__init__(name)
+        self.dbus = None
         self._bus_name = f'org.mpris.MediaPlayer2.{name}'
         self._entry_name = 'org.mpris.MediaPlayer2'
         self._player_entry_name = 'org.mpris.MediaPlayer2.Player'
@@ -305,6 +306,8 @@ class Mpris2Interface(BaseInterface):
         await self.dbus.wait_for_disconnect()
 
     async def stop(self):
+        if self.dbus is None:
+            return
         self.dbus.disconnect()
 
 

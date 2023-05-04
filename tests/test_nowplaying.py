@@ -60,7 +60,7 @@ async def server():
     service = NowPlayingInterface()
     asyncio.ensure_future(service.start())
     yield service
-    await asyncio.sleep(1)
+    await asyncio.sleep(3)
     await service.stop()
 
 
