@@ -1,5 +1,8 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    types: [ opened, reopened ]
 
 jobs:
   ci:
@@ -20,10 +23,13 @@ jobs:
         with:
           poetry-version: ${{ matrix.poetry-version }}
       - name: Lock dependencies
+        shell: bash
         run: poetry lock
       - name: Install dependencies
+        shell: bash
         run: poetry install
       - name: Run tests
+        shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt install -y dbus-x11
