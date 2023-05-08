@@ -191,12 +191,7 @@ class WindowsInterface(BaseInterface):
 
     async def start(self):
         # Don't need a background server for Windows
-        while self._running:
-            await asyncio.sleep(1)
-        try:
-            self._player.close()
-        except:
-            pass
+        pass
 
     async def stop(self):
         self._running = False
