@@ -27,6 +27,7 @@ def TimeSpan(x):
 class WindowsInterface(BaseInterface):
     def __init__(self, name):
         super(WindowsInterface, self).__init__(name)
+        self._id = name
         self._loop = asyncio.get_event_loop()
         self._running = True
         self._playback_properties = PlaybackProperties()
@@ -166,7 +167,7 @@ class WindowsInterface(BaseInterface):
             self._updater.type = MediaPlaybackType.VIDEO
         else:
             self._updater.type = MediaPlaybackType.MUSIC
-        self._updater.app_media_id = value.id_
+        self._updater.app_media_id = value.id_ or self._id
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
