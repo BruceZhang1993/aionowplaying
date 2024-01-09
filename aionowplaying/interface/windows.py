@@ -157,6 +157,13 @@ class WindowsInterface(BaseInterface):
         elif name == PlaybackPropertyName.Position:
             self._timeline.position = TimeSpan(value * 10000)
             self._controls.update_timeline_properties(self._timeline)
+        elif name == PlaybackPropertyName.Position:
+            self._timeline.position = TimeSpan(value * 10000)
+            self._controls.update_timeline_properties(self._timeline)
+        elif name == PlaybackPropertyName.Duration:
+            self._timeline.end_time = TimeSpan(value * 10000)
+            self._timeline.max_seek_time = TimeSpan(value * 10000)
+            self._controls.update_timeline_properties(self._timeline)
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
         # update media info
