@@ -108,6 +108,11 @@ class WindowsInterface(BaseInterface):
                 self._run_task(self.on_previous())
             else:
                 self.on_previous()
+        if button == SystemMediaTransportControlsButton.STOP and self._playback_properties.CanControl:
+            if asyncio.iscoroutinefunction(self.on_stop):
+                self._run_task(self.on_stop())
+            else:
+                self.on_stop()
 
     def auto_repeat_mode_change_requested(self, _, args: AutoRepeatModeChangeRequestedEventArgs):
         value = LoopStatus.None_
@@ -126,7 +131,10 @@ class WindowsInterface(BaseInterface):
         pass
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
-        if name == PlaybackPropertyName.CanPlay:
+        if name == PlaybackPropertyName.CanControl:
+            self._controls.is_stop_enabled = value
+            self._playback_properties.CanControl = value
+        elif name == PlaybackPropertyName.CanPlay:
             self._controls.is_play_enabled = value
             self._playback_properties.CanPlay = value
         elif name == PlaybackPropertyName.CanPause:
