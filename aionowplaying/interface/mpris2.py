@@ -37,6 +37,8 @@ class MprisPlayerServiceInterface(ServiceInterface):
 
     def set_property(self, name: str, value: Any):
         setattr(self._properties, name, value)
+        if name == PlaybackPropertyName.Position:
+            return
         if isinstance(value, PlaybackProperties.MetadataBean):
             value = DBusBeanMapper.metadata(value)
         self.emit_properties_changed({name: value})
