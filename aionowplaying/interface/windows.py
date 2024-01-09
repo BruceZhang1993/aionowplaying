@@ -20,8 +20,8 @@ from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, 
     MediaType
 
 
-def TimeSpan(x):
-    return timedelta(microseconds=x/10000)
+def TimeSpan(x_microsec):
+    return timedelta(microseconds=x_microsec)
 
 
 class WindowsInterface(BaseInterface):
@@ -40,6 +40,9 @@ class WindowsInterface(BaseInterface):
         self._controls.add_playback_rate_change_requested(self.playback_rate_change_requested)
         self._controls.add_property_changed(self.property_changed)
         self._controls.add_shuffle_enabled_change_requested(self.shuffle_change_requested)
+
+        self._updater.app_media_id = name
+        self._updater.update()
 
     def shuffle_change_requested(self, _, args: ShuffleEnabledChangeRequestedEventArgs):
         shuffle_enabled: bool = args.requested_shuffle_enabled
@@ -65,13 +68,19 @@ class WindowsInterface(BaseInterface):
 
     def playback_position_change_requested(self, _, args: PlaybackPositionChangeRequestedEventArgs):
         position = args.requested_playback_position
+        position = position.seconds * 1000 * 1000 + position.microseconds
+
         if self._playback_properties.CanSeek:
             if asyncio.iscoroutinefunction(self.on_set_position):
-                self._run_task(self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000)))
-                self._run_task(self.on_seek(int(position.duration / 10000)))
+                self._run_task(self.on_set_position(self._playback_properties.Metadata.id_, position))
             else:
-                self.on_set_position(self._playback_properties.Metadata.id_, int(position.duration / 10000))
-                self.on_seek(int(position.duration / 10000))
+                self.on_set_position(self._playback_properties.Metadata.id_, position)
+
+            if asyncio.iscoroutinefunction(self.on_seek):
+                self._run_task(self.on_seek(position))
+            else:
+                self.on_seek(position)
+
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
@@ -129,6 +138,8 @@ class WindowsInterface(BaseInterface):
         elif name == PlaybackPropertyName.CanGoPrevious:
             self._controls.is_previous_enabled = value
             self._playback_properties.CanGoPrevious = value
+        elif name == PlaybackPropertyName.CanSeek:
+            self._playback_properties.CanSeek = value
         elif name == PlaybackPropertyName.PlaybackStatus:
             if value == PlaybackStatus.Playing:
                 self._controls.playback_status = MediaPlaybackStatus.PLAYING
@@ -155,7 +166,11 @@ class WindowsInterface(BaseInterface):
                 self._controls.auto_repeat_mode = MediaPlaybackAutoRepeatMode.TRACK
             self._playback_properties.LoopStatus = value
         elif name == PlaybackPropertyName.Position:
-            self._timeline.position = TimeSpan(value * 10000)
+            self._timeline.position = TimeSpan(value)
+            self._controls.update_timeline_properties(self._timeline)
+        elif name == PlaybackPropertyName.Duration:
+            self._timeline.end_time = TimeSpan(value)
+            self._timeline.max_seek_time = TimeSpan(value)
             self._controls.update_timeline_properties(self._timeline)
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
@@ -166,7 +181,10 @@ class WindowsInterface(BaseInterface):
             self._updater.type = MediaPlaybackType.VIDEO
         else:
             self._updater.type = MediaPlaybackType.MUSIC
-        self._updater.app_media_id = value.id_
+        
+        if value.id_:
+            self._updater.app_media_id = value.id_
+
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
@@ -178,9 +196,9 @@ class WindowsInterface(BaseInterface):
         self._updater.update()
         # update timeline
         self._timeline.start_time = TimeSpan(0)
-        self._timeline.end_time = TimeSpan(value.duration * 10000)
+        self._timeline.end_time = TimeSpan(value.duration)
         self._timeline.min_seek_time = TimeSpan(0)
-        self._timeline.max_seek_time = TimeSpan(value.duration * 10000)
+        self._timeline.max_seek_time = TimeSpan(value.duration)
         self._controls.update_timeline_properties(self._timeline)
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
