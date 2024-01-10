@@ -41,9 +41,6 @@ class WindowsInterface(BaseInterface):
         self._controls.add_property_changed(self.property_changed)
         self._controls.add_shuffle_enabled_change_requested(self.shuffle_change_requested)
 
-        self._updater.app_media_id = name
-        self._updater.update()
-
     def shuffle_change_requested(self, _, args: ShuffleEnabledChangeRequestedEventArgs):
         shuffle_enabled: bool = args.requested_shuffle_enabled
         if asyncio.iscoroutinefunction(self.on_shuffle):
@@ -190,9 +187,8 @@ class WindowsInterface(BaseInterface):
         else:
             self._updater.type = MediaPlaybackType.MUSIC
         
-        if value.id_:
-            self._updater.app_media_id = value.id_
-
+        self._updater.app_media_id = value.id_
+        
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album
