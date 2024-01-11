@@ -66,17 +66,17 @@ class MacOSInterface(BaseInterface):
             # HELP: Is there a better way to do this?
             nowplaying_info = self._get_or_create_nowplaying_info()
             nowplaying_info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = \
-                self.get_playback_property(PlaybackPropertyName.Position) / 1000
+                self.get_playback_property(PlaybackPropertyName.Position) / 1000 / 1000
             nowplaying_info[MPNowPlayingInfoPropertyPlaybackRate] = rate
             self.info_center.setNowPlayingInfo_(nowplaying_info)
             self.info_center.setPlaybackState_(PlaybackStatusStateMapping[value])
         elif name == PlaybackPropertyName.Position:
-            self._update_property(MPNowPlayingInfoPropertyElapsedPlaybackTime, value/1000)
+            self._update_property(MPNowPlayingInfoPropertyElapsedPlaybackTime, value / 1000 / 1000)
         elif name == PlaybackPropertyName.Rate:
             self._update_property(MPNowPlayingInfoPropertyDefaultPlaybackRate, 1)
             self._update_property(MPNowPlayingInfoPropertyPlaybackRate, value)
         elif name == PlaybackPropertyName.Duration:
-            self._update_property(MPMediaItemPropertyPlaybackDuration, value/1000)
+            self._update_property(MPMediaItemPropertyPlaybackDuration, value / 1000 / 1000)
         else:
             # TODO: handle more properties changes
             pass
