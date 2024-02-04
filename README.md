@@ -1,8 +1,9 @@
-[![GitHub Workflow Status][ci-shield]][ci-url]
-[![GPL3.0 License][license-shield]][license-url]
-
 # aionowplaying
 A cross-platform Now Playing client
+
+## CI Status
+
+![GitHub Workflow Matrix Status](http://github-actions.40ants.com/BruceZhang1993/aionowplaying/matrix.svg)
 
 ## Usage
 ```shell
@@ -23,7 +24,7 @@ poetry run pytest -v
 ```
 
 ## License
-GPL-3.0
+[![GPL3.0 License][license-shield]][license-url]
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [ci-shield]: https://img.shields.io/github/actions/workflow/status/BruceZhang1993/aionowplaying/ci.yml?style=for-the-badge
