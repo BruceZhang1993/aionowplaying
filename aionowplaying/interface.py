@@ -1,9 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
+from aionowplaying.enum import PlaybackStatus, LoopStatus
+
 
 # noinspection PyPep8Naming
-class MediaPlayerInterface(metaclass=ABCMeta):
+class MPInterface(metaclass=ABCMeta):
     """
     Media player definitions of aionp
     All media players using aionp should implement this interface
@@ -123,4 +125,77 @@ class MediaPlayerInterface(metaclass=ABCMeta):
         Causes the media player to stop running
         You must implement this method if canQuit is set to true.
         """
+        pass
+
+
+# noinspection PyPep8Naming
+class MPPlayerInterface(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def canGoNext(self) -> bool:
+        pass
+
+    def next(self):
+        pass
+
+    @property
+    @abstractmethod
+    def canGoPrevious(self) -> bool:
+        pass
+
+    def previous(self):
+        pass
+
+    @property
+    @abstractmethod
+    def canPause(self) -> bool:
+        pass
+
+    def pause(self):
+        pass
+
+    def playPause(self):
+        pass
+
+    @property
+    @abstractmethod
+    def canControl(self) -> bool:
+        pass
+
+    def stop(self):
+        pass
+
+    @property
+    def loopStatus(self) -> Optional[LoopStatus]:
+        return None
+
+    @loopStatus.setter
+    def loopStatus(self, status: LoopStatus):
+        pass
+
+    @property
+    @abstractmethod
+    def canPlay(self) -> bool:
+        pass
+
+    def play(self):
+        pass
+
+    @property
+    @abstractmethod
+    def canSeek(self) -> bool:
+        pass
+
+    def seek(self, offset: int):
+        pass
+
+    def setPosition(self, trackId: str, position: int):
+        pass
+
+    def openUri(self, uri: str):
+        pass
+
+    @property
+    @abstractmethod
+    def playbackStatus(self) -> PlaybackStatus:
         pass
