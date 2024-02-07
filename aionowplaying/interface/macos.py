@@ -49,7 +49,7 @@ class MacOSInterface(BaseInterface):
         if name == PlaybackPropertyName.Position:
             return self._get_property(MPNowPlayingInfoPropertyElapsedPlaybackTime)
         if name == PlaybackPropertyName.Rate:
-            return self._get_property(MPNowPlayingInfoPropertyDefaultPlaybackRate)
+            return self._get_property(MPNowPlayingInfoPropertyPlaybackRate)
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
         if name == PlaybackPropertyName.Metadata:
