@@ -45,6 +45,12 @@ class MacOSInterface(BaseInterface):
         for cmd, handler in self._cmds:
             cmd.addTargetWithHandler_(create_handler(cmd, handler))
 
+    def get_playback_property(self, name: PlaybackPropertyName) -> Any:
+        if name == PlaybackPropertyName.Position:
+            return self._get_property(MPNowPlayingInfoPropertyElapsedPlaybackTime)
+        if name == PlaybackPropertyName.Rate:
+            return self._get_property(MPNowPlayingInfoPropertyDefaultPlaybackRate)
+
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
         if name == PlaybackPropertyName.Metadata:
             value: PlaybackProperties.MetadataBean
@@ -96,3 +102,7 @@ class MacOSInterface(BaseInterface):
         nowplaying_info = self._get_or_create_nowplaying_info()
         nowplaying_info[name] = value
         self.info_center.setNowPlayingInfo_(nowplaying_info)
+
+    def _get_property(self, name):
+        nowplaying_info = self._get_or_create_nowplaying_info()
+        return nowplaying_info[name]
