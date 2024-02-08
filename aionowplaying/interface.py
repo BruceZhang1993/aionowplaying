@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
 from aionowplaying.enum import PlaybackStatus, LoopStatus
+from aionowplaying.model import Metadata
 
 
 # noinspection PyPep8Naming
@@ -174,6 +175,22 @@ class MPPlayerInterface(metaclass=ABCMeta):
         pass
 
     @property
+    def shuffle(self) -> Optional[bool]:
+        return None
+
+    @shuffle.setter
+    def shuffle(self, value: bool):
+        pass
+
+    @property
+    def volume(self) -> Optional[float]:
+        return None
+
+    @volume.setter
+    def volume(self, value: float):
+        pass
+
+    @property
     @abstractmethod
     def canPlay(self) -> bool:
         pass
@@ -198,4 +215,26 @@ class MPPlayerInterface(metaclass=ABCMeta):
     @property
     @abstractmethod
     def playbackStatus(self) -> PlaybackStatus:
+        pass
+
+    @property
+    def rate(self) -> float:
+        return 1.0
+
+    @property
+    def minimumRate(self) -> float:
+        return 1.0
+
+    @property
+    def maximumRate(self) -> float:
+        return 1.0
+
+    @property
+    @abstractmethod
+    def metadata(self) -> Metadata:
+        pass
+
+    @property
+    @abstractmethod
+    def position(self) -> int:
         pass
