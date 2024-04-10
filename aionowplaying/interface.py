@@ -83,6 +83,12 @@ class MPInterface(metaclass=ABCMeta):
 
     @property
     @abstractmethod
+    def id(self) -> str:
+        """ID to identify the media player to backend"""
+        pass
+
+    @property
+    @abstractmethod
     def identity(self) -> str:
         """A friendly name to identify the media player to users"""
         pass
@@ -237,4 +243,31 @@ class MPPlayerInterface(metaclass=ABCMeta):
     @property
     @abstractmethod
     def position(self) -> int:
+        pass
+
+    def signalSeeked(self, position: int):
+        pass
+
+
+# noinspection PyPep8Naming
+class MPTrackListInterface(metaclass=ABCMeta):
+    @abstractmethod
+    def getTracksMetadata(self, trackIds: List[str]) -> List[Metadata]:
+        pass
+
+    @property
+    @abstractmethod
+    def canEditTracks(self) -> bool:
+        pass
+
+    @abstractmethod
+    def addTrack(self, uri: str, afterTrackId: Optional[str], setAsCurrent: bool):
+        pass
+
+    @abstractmethod
+    def removeTrack(self, trackId: str):
+        pass
+
+    @abstractmethod
+    def goTo(self, trackId: str):
         pass
