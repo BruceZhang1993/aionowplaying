@@ -11,4 +11,7 @@ class NowPlayingService(Thread):
         self._backend = create_backend(interface)
 
     def run(self):
-        pass
+        self._backend.run()
+
+    def stop(self):
+        self._backend.destroy()
