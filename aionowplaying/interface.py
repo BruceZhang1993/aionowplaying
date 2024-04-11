@@ -1,12 +1,16 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
+from aionowplaying.backend import BaseNowPlayingBackend
 from aionowplaying.enum import PlaybackStatus, LoopStatus
 from aionowplaying.model import Metadata
 
 
 # noinspection PyPep8Naming
 class MPInterface(metaclass=ABCMeta):
+    def __init__(self):
+        self.backend: Optional[BaseNowPlayingBackend]
+
     """
     Media player definitions of aionp
     All media players using aionp should implement this interface
@@ -245,14 +249,16 @@ class MPPlayerInterface(metaclass=ABCMeta):
     def position(self) -> int:
         pass
 
-    def signalSeeked(self, position: int):
-        pass
-
 
 # noinspection PyPep8Naming
 class MPTrackListInterface(metaclass=ABCMeta):
     @abstractmethod
     def getTracksMetadata(self, trackIds: List[str]) -> List[Metadata]:
+        pass
+
+    @property
+    @abstractmethod
+    def tracks(self) -> List[str]:
         pass
 
     @property

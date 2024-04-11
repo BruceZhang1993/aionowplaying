@@ -6,8 +6,9 @@ from dbus_next.service import ServiceInterface, dbus_property, method, signal
 
 from aionowplaying.backend.base import BaseNowPlayingBackend
 from aionowplaying.enum import LoopStatus
-from aionowplaying.interface import MPInterface, MPPlayerInterface
-from aionowplaying.interface_old.base import PropertyName, PlaybackPropertyName, PlaybackProperties
+from aionowplaying.interface import MPInterface, MPPlayerInterface, MPTrackListInterface
+from aionowplaying.interface_old.base import PropertyName, PlaybackPropertyName, PlaybackProperties, \
+    TrackListPropertyName
 from aionowplaying.model import Metadata
 
 
@@ -174,8 +175,8 @@ class MprisPlayerServiceInterface(ServiceInterface):
         return self._it.canControl
 
     @signal(name='Seeked')
-    def seeked(self, position: int) -> 'x':
-        return self._it.signalSeeked(position)
+    def seeked(self, position: 'x'):
+        pass
 
     @method(name="Next")
     def next(self):
@@ -222,13 +223,60 @@ class MprisPlayerServiceInterface(ServiceInterface):
             self._it.setPosition(track_id, position)
 
 
+class MprisTracklistServiceInterface(ServiceInterface):
+    def __init__(self, bus_name: str, it: MPTrackListInterface = None):
+        super().__init__(bus_name)
+        self._it = it
+
+    @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.CanEditTracks.value)
+    def can_edit_tracks(self) -> 'b':
+        return self._it.canEditTracks
+
+    @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.Tracks.value)
+    def tracks(self) -> 'ao':
+        return self._it.tracks
+
+    @method(name="GetTracksMetadata")
+    def get_tracks_metadata(self, track_ids: 'ao') -> 'aa{sv}':
+        return self._it.getTracksMetadata(track_ids)
+
+    @method(name="AddTrack")
+    def add_track(self, uri: 's', after_track_id: 'o', set_as_current: 'b'):
+        self._it.addTrack(uri, after_track_id, set_as_current)
+
+    @method(name="RemoveTrack")
+    def remove_track(self, track_id: 'o'):
+        self._it.removeTrack(track_id)
+
+    @method(name="GoTo")
+    def goto(self, track_id: 'o'):
+        self._it.goTo(track_id)
+
+    @signal(name="TrackListReplaced")
+    def track_list_replaced(self, track_ids: 'ao', current_track_id: 'o'):
+        pass
+
+    @signal(name="TrackAdded")
+    def track_added(self, metadata: 'a{sv}', after_track_id: 'o'):
+        pass
+
+    @signal(name="TrackRemoved")
+    def track_removed(self, track_id: 'o'):
+        pass
+
+    @signal(name="TrackMetadataChanged")
+    def track_metadata_changed(self, track_id: 'o', metadata: 'a{sv}'):
+        pass
+
+
 class LinuxNowPlayingBackend(BaseNowPlayingBackend):
     @staticmethod
     def target_platforms() -> List[str]:
         return ['linux']
 
-    def __init__(self, interface: MPInterface, player_interface: MPPlayerInterface):
-        super().__init__(interface, player_interface)
+    def __init__(self, interface: MPInterface, player_interface: MPPlayerInterface,
+                 tracklist_interface: MPTrackListInterface):
+        super().__init__(interface, player_interface, tracklist_interface)
         self._dbus: Optional[MessageBus] = None
         self._bus_name = f'org.mpris.MediaPlayer2.{interface.id}'
         self._entry_name = 'org.mpris.MediaPlayer2'
@@ -237,6 +285,22 @@ class LinuxNowPlayingBackend(BaseNowPlayingBackend):
         self._object_path = '/org/mpris/MediaPlayer2'
         self._bus = MprisServiceInterface(self._entry_name, interface)
         self._player_bus = MprisPlayerServiceInterface(self._player_entry_name, player_interface)
+        self._tracklist_bus = MprisTracklistServiceInterface(self._player_tracklist_name, tracklist_interface)
+
+    def seeked(self, position: int):
+        self._player_bus.seeked(position)
+
+    def tracklist_replaced(self, tracks: List[str], current: str):
+        self._tracklist_bus.track_list_replaced(tracks, current)
+
+    def track_added(self, metadata: Metadata, after_track: str):
+        self._tracklist_bus.track_added(DBusBeanMapper.metadata(metadata), after_track)
+
+    def track_removed(self, track: str):
+        self._tracklist_bus.track_removed(track)
+
+    def track_metadata_changed(self, track: str, metadata: Metadata):
+        self._tracklist_bus.track_metadata_changed(track, DBusBeanMapper.metadata(metadata))
 
     def run(self):
         self._dbus = MessageBus()
