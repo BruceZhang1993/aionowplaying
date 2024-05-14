@@ -66,7 +66,13 @@ class ExampleMPPlayerInterface(MPPlayerInterface):
 
     @property
     def metadata(self) -> Metadata:
-        pass
+        metadata = Metadata(
+            trackId='/ExamplePlayer/Track_01',
+            length=100,
+            artUrl='',
+            album='Example Album'
+        )
+        return metadata
 
     @property
     def position(self) -> int:
