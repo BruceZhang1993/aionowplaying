@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from aionowplaying.enum import PlaybackStatus
 from aionowplaying.interface import MPInterface, MPPlayerInterface, MPTrackListInterface
@@ -65,7 +65,7 @@ class ExampleMPPlayerInterface(MPPlayerInterface):
         return PlaybackStatus.Playing
 
     @property
-    def metadata(self) -> Metadata:
+    def metadata(self) -> Optional[Metadata]:
         metadata = Metadata(
             trackId='/ExamplePlayer/Track_01',
             length=100,

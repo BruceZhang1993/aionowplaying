@@ -32,6 +32,12 @@ class DBusBeanMapper:
         metadata_map['xesam:url'] = Variant('s', metadata.url)
         return metadata_map
 
+    @staticmethod
+    def emptyMetadata() -> dict:
+        metadata_map = dict()
+        metadata_map['mpris:trackid'] = Variant('s', ' /org/mpris/MediaPlayer2/TrackList/NoTrack')
+        return metadata_map
+
 
 class MprisServiceInterface(ServiceInterface):
     def __init__(self, bus_name: str, it: MPInterface = None):
@@ -127,6 +133,8 @@ class MprisPlayerServiceInterface(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ, name=PlaybackPropertyName.Metadata.value)
     def metadata(self) -> 'a{sv}':
         metadata = self._it.metadata
+        if metadata is None:
+            return DBusBeanMapper.emptyMetadata()
         return DBusBeanMapper.metadata(metadata)
 
     @dbus_property(access=PropertyAccess.READWRITE, name=PlaybackPropertyName.Volume.value)

@@ -241,7 +241,7 @@ class MPPlayerInterface(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def metadata(self) -> Metadata:
+    def metadata(self) -> Optional[Metadata]:
         pass
 
     @property
