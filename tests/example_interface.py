@@ -35,6 +35,28 @@ class ExampleMPInterface(MPInterface):
         return ['audio/mpeg']
 
 
+class ExampleMPTrackListInterface(MPTrackListInterface):
+    def getTracksMetadata(self, trackIds: List[str]) -> List[Metadata]:
+        return []
+
+    @property
+    def tracks(self) -> List[str]:
+        return []
+
+    @property
+    def canEditTracks(self) -> bool:
+        return True
+
+    def addTrack(self, uri: str, afterTrackId: Optional[str], setAsCurrent: bool):
+        pass
+
+    def removeTrack(self, trackId: str):
+        pass
+
+    def goTo(self, trackId: str):
+        pass
+
+
 class ExampleMPPlayerInterface(MPPlayerInterface):
     @property
     def canGoNext(self) -> bool:
