@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aionowplaying"
-version = "0.10.0"
+version = "0.10.1"
 license = "GPL-3.0-only"
 description = "A cross-platform Now Playing client"
 authors = ["Bruce Zhang <zttt183525594@gmail.com>"]
