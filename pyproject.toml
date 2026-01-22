@@ -28,6 +28,7 @@ dependencies = [
     "pydantic",
     "dbus-next ; sys_platform == 'linux'",
     "winrt-runtime ; sys_platform == 'win32'",
+    "winrt-Windows.Media ; sys_platform == 'win32'",
     "winrt-Windows.Media.Playback ; sys_platform == 'win32'",
     "winrt-Windows.Foundation ; sys_platform == 'win32'",
     "winrt-Windows.Storage ; sys_platform == 'win32'",
