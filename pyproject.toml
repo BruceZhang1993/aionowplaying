@@ -28,6 +28,7 @@ dependencies = [
     "pydantic",
     "dbus-next ; sys_platform == 'linux'",
     "winrt-runtime ; sys_platform == 'win32'",
+    "winrt-Windows.Media.Playback ; sys_platform == 'win32'",
     "pyobjc-framework-MediaPlayer ; sys_platform == 'darwin'",
     "pyobjc-framework-Cocoa ; sys_platform == 'darwin'",
 ]

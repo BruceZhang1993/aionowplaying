@@ -18,6 +18,7 @@ dependencies = [
     { name = "pyobjc-framework-mediaplayer", version = "11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' and sys_platform == 'darwin'" },
     { name = "pyobjc-framework-mediaplayer", version = "12.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' and sys_platform == 'darwin'" },
     { name = "winrt-runtime", marker = "sys_platform == 'win32'" },
+    { name = "winrt-windows-media-playback", marker = "sys_platform == 'win32'" },
 ]
 
 [package.dev-dependencies]
@@ -27,6 +28,8 @@ dev = [
     { name = "pytest", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pytest-asyncio", version = "1.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest-asyncio", version = "1.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "winrt-runtime" },
+    { name = "winrt-windows-media-playback" },
 ]
 
 [package.metadata]
@@ -36,6 +39,7 @@ requires-dist = [
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
     { name = "pyobjc-framework-mediaplayer", marker = "sys_platform == 'darwin'" },
     { name = "winrt-runtime", marker = "sys_platform == 'win32'" },
+    { name = "winrt-windows-media-playback", marker = "sys_platform == 'win32'" },
 ]
 
 [package.metadata.requires-dev]
@@ -43,6 +47,8 @@ dev = [
     { name = "poetry2setup", specifier = ">=1.0.0,<2" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "winrt-runtime" },
+    { name = "winrt-windows-media-playback" },
 ]
 
 [[package]]
@@ -787,4 +793,33 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/31/12/f8a79bd0cdf1db78735619016b1b7f5efe8f138207a621edec9aae58f846/winrt_runtime-3.2.1-cp39-cp39-win32.whl", hash = "sha256:07c0cb4a53a4448c2cb7597b62ae8c94343c289eeebd8f83f946eb2c817bde01", size = 211013, upload-time = "2025-06-06T06:44:14.651Z" },
     { url = "https://files.pythonhosted.org/packages/6f/7d/1e7da43fd4dab3a7b181c5c5dde547f877dab391b7d34a11a835dd3ea616/winrt_runtime-3.2.1-cp39-cp39-win_amd64.whl", hash = "sha256:1856325ca3354b45e0789cf279be9a882134085d34214946db76110d98391efa", size = 242293, upload-time = "2025-06-06T06:44:15.581Z" },
     { url = "https://files.pythonhosted.org/packages/27/5e/dafd643a8ece50f3136dfb6d8d5bcbc10601f11bc09fdd87df5de8994889/winrt_runtime-3.2.1-cp39-cp39-win_arm64.whl", hash = "sha256:cf237858de1d62e4c9b132c66b52028a7a3e8534e8ab90b0e29a68f24f7be39d", size = 415952, upload-time = "2025-06-06T06:44:16.503Z" },
+]
+
+[[package]]
+name = "winrt-windows-media-playback"
+version = "3.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "winrt-runtime" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ec/5e/a498c98df1d59604c4b2f20c38a3faf6c225b22eb4ad739dca4a988d1f20/winrt_windows_media_playback-3.2.1.tar.gz", hash = "sha256:f16107755c28e23fd8827563eb3103fc4783d269402288b366b8d1a02d4948e4", size = 44488, upload-time = "2025-06-06T14:42:43.985Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6b/46/6f872afdfc13fa863a3643e8d7931967f3c9490526d5e6759d90ef0ad9b3/winrt_windows_media_playback-3.2.1-cp310-cp310-win32.whl", hash = "sha256:9ea29b2f1fe69e1320792027036f70051e13026e582ea14c0ca778268e5cbcc6", size = 176126, upload-time = "2025-06-06T07:26:05.403Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/a7/77bedc9e6e905a6f5fce10ab02beb91a76aea0549cc4bddf2af753d076a8/winrt_windows_media_playback-3.2.1-cp310-cp310-win_amd64.whl", hash = "sha256:eb1b946444e5fb7520961057842543f833cfa2d0dae6137c2c9386a47e6d608a", size = 185625, upload-time = "2025-06-06T07:26:07.348Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/c9/3e0f5c8718542c4ea4ab8302bd2ebce5fa7e23051c2078a8fe449efe7cca/winrt_windows_media_playback-3.2.1-cp310-cp310-win_arm64.whl", hash = "sha256:b49a4362d02b8c431c5b9294d4318c8e146c32d2c45f0c48e3990d9309a06c76", size = 178138, upload-time = "2025-06-06T07:26:08.571Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/ec/b9a58ef62dd9921db5bda9170d78b9a33a9f7cc3cbe93fb5d20db5c04ae6/winrt_windows_media_playback-3.2.1-cp311-cp311-win32.whl", hash = "sha256:94af1a72d5c39a13e8885250d8ae11ce00db1fba4a14c89bf910e06b3bdbf4da", size = 176294, upload-time = "2025-06-06T07:26:09.585Z" },
+    { url = "https://files.pythonhosted.org/packages/04/9c/445ba6946015d158a7195e2ce0df2e86bd710bbaf763db0d22c9f7b9d353/winrt_windows_media_playback-3.2.1-cp311-cp311-win_amd64.whl", hash = "sha256:b46c2490000308306a776057397d882e177f628e2fb5f37200107b82232df3e2", size = 185750, upload-time = "2025-06-06T07:26:10.472Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/12/5fe659066bb7d339d84efcdc20608bae1684c55c23bc95f2f16b6410fd6a/winrt_windows_media_playback-3.2.1-cp311-cp311-win_arm64.whl", hash = "sha256:3d0e005430dbce819377dec8f4b788bc682545fa957d4149f75906c49bc5a56c", size = 178021, upload-time = "2025-06-06T07:26:11.417Z" },
+    { url = "https://files.pythonhosted.org/packages/35/8e/4455c4afc41409417c331b2d824e89faf83b7afaf2c31ad6b3d2453d848b/winrt_windows_media_playback-3.2.1-cp312-cp312-win32.whl", hash = "sha256:7e0bf3a1e7fa527f792953f341f712c8b382516e0e39038a947255f73845b622", size = 176622, upload-time = "2025-06-06T07:26:12.346Z" },
+    { url = "https://files.pythonhosted.org/packages/71/07/51a446607acff13242bf5d5c2318037416acb18afeaf6fa76f3b83fec6ef/winrt_windows_media_playback-3.2.1-cp312-cp312-win_amd64.whl", hash = "sha256:f1c86e67692c7f4749fbfc5d1a069cfae4c6fee7673356baf4f2151968f3ce53", size = 183586, upload-time = "2025-06-06T07:26:13.295Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/9c/ec7725cec40124fdc8cbbcaa83935cf5b87faf38336cdc81a95a877c67ef/winrt_windows_media_playback-3.2.1-cp312-cp312-win_arm64.whl", hash = "sha256:d6c2cf93914e8b208d97217d1c5106ce2612b19fe4e4ae3dbd97edf153edfaa6", size = 177743, upload-time = "2025-06-06T07:26:14.35Z" },
+    { url = "https://files.pythonhosted.org/packages/df/62/65e3530b5864764c836350fb9a3f7c0651a8ca651b60c8c1200e3191c3f6/winrt_windows_media_playback-3.2.1-cp313-cp313-win32.whl", hash = "sha256:84091a30d715a5cda9857517f29937a2ac0d8bf46f1280e2d93246890d5efd82", size = 176579, upload-time = "2025-06-06T07:26:15.739Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/17/f946acc40479dfe9602644f97e8038d84a57a9230dd9711c959733b3a21e/winrt_windows_media_playback-3.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:950f3d10c6d634b928171032919941bcbc74eaf6ca9f5201cf57c4fd56a93775", size = 183596, upload-time = "2025-06-06T07:26:17.255Z" },
+    { url = "https://files.pythonhosted.org/packages/80/0d/569177bbe0abfb99833becf704477978e89defca861f178cab07eef0f836/winrt_windows_media_playback-3.2.1-cp313-cp313-win_arm64.whl", hash = "sha256:fd0c6634a6ad49655d5e36779c3217e3c88a9bb05563062e2535c1eb367ef0c9", size = 177689, upload-time = "2025-06-06T07:26:18.577Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/6c/a9a2e523130e683fb0d94363bec9e8d40560a75a6ba92d2c65a6e0ffe859/winrt_windows_media_playback-3.2.1-cp314-cp314-win32.whl", hash = "sha256:c954ca3ef9827a1cd9512da21cc3d4b2a7083d8d12909fcb99db8b954878996c", size = 179295, upload-time = "2025-09-20T07:14:44.417Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/fa/18628f39386ec24ced74fa246a2da434edb6a9a3d6cefb7e5e1307e7a309/winrt_windows_media_playback-3.2.1-cp314-cp314-win_amd64.whl", hash = "sha256:eee23df620cae49bac27d089ed7efa6de6908b7e4aa5e8c2251c3e6ee783e8f2", size = 188676, upload-time = "2025-09-20T07:14:45.347Z" },
+    { url = "https://files.pythonhosted.org/packages/12/0d/c7f1ca56c02ec6d64fff8fad845013fcdd87823c08eb81ad16bde07dc8e5/winrt_windows_media_playback-3.2.1-cp314-cp314-win_arm64.whl", hash = "sha256:42283ccea1665aeaa441310afe705a5e003d3087783aeabf15c4c170bbfbbc54", size = 187297, upload-time = "2025-09-20T07:14:46.206Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/a8/7191c99b67d8dc63f93cf8f1efa005aa909215632e9e643aea68e874519b/winrt_windows_media_playback-3.2.1-cp39-cp39-win32.whl", hash = "sha256:9b9bd111b707ba2cd35649d6f13d2fa9d0b70c1a846cd45e2beac4e83d1cc356", size = 175876, upload-time = "2025-06-06T07:26:19.478Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/b2/491940c8ed78e226df77c0780d24f2b9275641c76b01b512ed6df8cadab2/winrt_windows_media_playback-3.2.1-cp39-cp39-win_amd64.whl", hash = "sha256:6db4fb8980b24ef53754e8184e22b437a1a723fe01da3d83f0e03b62062396ba", size = 187062, upload-time = "2025-06-06T07:26:20.521Z" },
+    { url = "https://files.pythonhosted.org/packages/19/8c/b69e3af807daf2b6bb20b52b79a83dd94fa3d0e6387a2d14c681aa61aacd/winrt_windows_media_playback-3.2.1-cp39-cp39-win_arm64.whl", hash = "sha256:187d7702ab2fddd108cb7c9bb4a208548f5aa687d0178dfa520675153e01b7be", size = 178481, upload-time = "2025-06-06T07:26:21.488Z" },
 ]

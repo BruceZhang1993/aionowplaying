@@ -3,17 +3,17 @@ import threading
 from typing import Any
 from datetime import timedelta
 
-from winsdk.system import Array
-from winsdk.windows.foundation import Uri
-from winsdk.windows.foundation.collections import IVector
-from winsdk.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
+from winrt.system import Array
+from winrt.windows.foundation import Uri
+from winrt.windows.foundation.collections import IVector
+from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
     SystemMediaTransportControlsDisplayUpdater, MediaPlaybackStatus, MediaPlaybackType, MediaPlaybackAutoRepeatMode, \
     AutoRepeatModeChangeRequestedEventArgs, SystemMediaTransportControlsButtonPressedEventArgs, \
     SystemMediaTransportControlsButton, PlaybackPositionChangeRequestedEventArgs, PlaybackRateChangeRequestedEventArgs, \
     SystemMediaTransportControlsPropertyChangedEventArgs, SystemMediaTransportControlsProperty, \
     ShuffleEnabledChangeRequestedEventArgs
-from winsdk.windows.media.playback import MediaPlayer
-from winsdk.windows.storage.streams import RandomAccessStreamReference
+from winrt.windows.media.playback import MediaPlayer
+from winrt.windows.storage.streams import RandomAccessStreamReference
 
 from src.aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
 from src.aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
