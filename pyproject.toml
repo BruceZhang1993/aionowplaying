@@ -1,30 +1,44 @@
-[tool.poetry]
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[project]
 name = "aionowplaying"
 version = "0.10.1"
-license = "GPL-3.0-only"
 description = "A cross-platform Now Playing client"
-authors = ["Bruce Zhang <zttt183525594@gmail.com>"]
-maintainers = ["Bruce Zhang <zttt183525594@gmail.com>"]
-keywords = ["nowplaying", "mpris"]
+authors = [{ name = "Bruce Zhang", email = "zttt183525594@gmail.com" }]
+requires-python = ">=3.9"
 readme = "README.md"
-repository = "https://github.com/BruceZhang1993/aionowplaying"
+license = "GPL-3.0-only"
+maintainers = [{ name = "Bruce Zhang", email = "zttt183525594@gmail.com" }]
+keywords = [
+    "nowplaying",
+    "mpris",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "pydantic",
+    "dbus-next ; sys_platform == 'linux'",
+    "winrt-runtime ; sys_platform == 'win32'",
+    "pyobjc-framework-MediaPlayer ; sys_platform == 'darwin'",
+    "pyobjc-framework-Cocoa ; sys_platform == 'darwin'",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.7"
-pydantic = "*"
-dbus-next = { version = "*", platform = "linux" }
-winsdk = { version = "*", platform = "win32" }
-pyobjc-framework-MediaPlayer = { version = "*", platform = "darwin" }
-pyobjc-framework-Cocoa = { version = "*", platform = "darwin" }
-
-[tool.poetry.dev-dependencies]
-pytest = "*"
-pytest-asyncio = "*"
-poetry2setup = "^1.0.0"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.urls]
+[project.urls]
+Repository = "https://github.com/BruceZhang1993/aionowplaying"
 "Bug Tracker" = "https://github.com/BruceZhang1993/aionowplaying/issues"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "poetry2setup>=1.0.0,<2",
+]
