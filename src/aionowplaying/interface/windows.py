@@ -5,7 +5,6 @@ from datetime import timedelta
 
 from winrt.system import Array
 from winrt.windows.foundation import Uri
-from winrt.windows.foundation.collections import IVector
 from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
     SystemMediaTransportControlsDisplayUpdater, MediaPlaybackStatus, MediaPlaybackType, MediaPlaybackAutoRepeatMode, \
     AutoRepeatModeChangeRequestedEventArgs, SystemMediaTransportControlsButtonPressedEventArgs, \
