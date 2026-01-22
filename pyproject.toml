@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "aionowplaying"
-version = "0.10.1"
+version = "0.11.0"
 description = "A cross-platform Now Playing client"
 authors = [{ name = "Bruce Zhang", email = "zttt183525594@gmail.com" }]
 requires-python = ">=3.9"
