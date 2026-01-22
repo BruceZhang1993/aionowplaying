@@ -2,7 +2,7 @@ import importlib
 import sys
 from typing import Type
 
-from aionowplaying.interface.base import BaseInterface
+from src.aionowplaying.interface.base import BaseInterface
 
 INTERFACES_BY_SYSTEM = {
     'linux': 'aionowplaying.interface.mpris2.Mpris2Interface',

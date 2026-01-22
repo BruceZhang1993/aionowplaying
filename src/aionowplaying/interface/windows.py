@@ -15,8 +15,8 @@ from winsdk.windows.media import SystemMediaTransportControlsTimelineProperties,
 from winsdk.windows.media.playback import MediaPlayer
 from winsdk.windows.storage.streams import RandomAccessStreamReference
 
-from aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
-from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
+from src.aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
+from src.aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
     MediaType
 
 

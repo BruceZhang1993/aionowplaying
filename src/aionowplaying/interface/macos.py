@@ -11,7 +11,7 @@ from MediaPlayer import (
     MPRemoteCommandHandlerStatusSuccess, MPNowPlayingInfoPropertyDefaultPlaybackRate,
 )
 
-from aionowplaying import (
+from src.aionowplaying import (
     BaseInterface, PlaybackPropertyName, PlaybackProperties, PlaybackStatus
 )
 

@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-import aionowplaying as aionp
+from src import aionowplaying as aionp
 
 PlayProp = aionp.PlaybackPropertyName
 
