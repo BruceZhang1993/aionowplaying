@@ -14,8 +14,8 @@ from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, 
 from winrt.windows.media.playback import MediaPlayer
 from winrt.windows.storage.streams import RandomAccessStreamReference
 
-from src.aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
-from src.aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
+from aionowplaying import BaseInterface, PropertyName, PlaybackPropertyName
+from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, PlaybackProperties, LoopStatus, \
     MediaType
 
 
@@ -76,7 +76,6 @@ class WindowsInterface(BaseInterface):
                 self._run_task(self.on_seek(position))
             else:
                 self.on_seek(position)
-
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
@@ -185,9 +184,9 @@ class WindowsInterface(BaseInterface):
             self._updater.type = MediaPlaybackType.VIDEO
         else:
             self._updater.type = MediaPlaybackType.MUSIC
-        
+
         self._updater.app_media_id = value.id_
-        
+
         self._updater.music_properties.artist = ','.join(value.artist)
         self._updater.music_properties.title = value.title
         self._updater.music_properties.album_title = value.album

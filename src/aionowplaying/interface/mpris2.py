@@ -4,7 +4,7 @@ from dbus_next import PropertyAccess, Variant
 from dbus_next.aio import MessageBus
 from dbus_next.service import ServiceInterface, dbus_property, method, signal
 
-from src.aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProperties, PlaybackProperties, \
+from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProperties, PlaybackProperties, \
     PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties
 
 
