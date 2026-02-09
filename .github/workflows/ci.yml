@@ -51,8 +51,10 @@ jobs:
           else
             uv run pytest -v --cov=aionowplaying --cov-report=term-missing --cov-report=xml:coverage.xml
           fi
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+      - name: Code Coverage Summary (Linux only)
+        if: runner.os == 'Linux'
+        uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          name: coverage-xml-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: coverage.xml
+          filename: coverage.xml
+          format: markdown
+          output: console
