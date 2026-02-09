@@ -269,8 +269,16 @@ class MacOSInterface(BaseInterface):
         return nowplaying_info[name]
 
     def _set_command_enabled(self, command, enabled: bool):
-        if command is not None and hasattr(command, "enabled"):
+        if command is None:
+            return
+        if hasattr(command, "enabled"):
             command.enabled = enabled
+            return
+        if hasattr(command, "isEnabled"):
+            try:
+                command.isEnabled = enabled
+            except Exception:
+                pass
 
     def _update_supported_rates(self):
         if self._cmd_change_rate is None:

@@ -125,7 +125,7 @@ def test_property_and_tracklist_roundtrip():
 
 
 def _read_enabled(command):
-    value = command.enabled
+    value = command.enabled if hasattr(command, "enabled") else command.isEnabled
     return value() if callable(value) else value
 
 
