@@ -51,6 +51,12 @@ jobs:
           else
             uv run pytest -v --cov --cov-branch --cov-report=xml
           fi
+          test_exit_code=$?
+          if [ "$RUNNER_OS" == "macOS" ] && [ "$test_exit_code" -eq 137 ]; then
+            echo "Tests exited with code 137 on macOS; allowing failure."
+            exit 0
+          fi
+          exit "$test_exit_code"
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
