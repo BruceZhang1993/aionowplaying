@@ -46,6 +46,7 @@ jobs:
       - name: Run tests with coverage
         shell: bash
         run: |
+          set +e
           if [ "$RUNNER_OS" == "Linux" ]; then
             dbus-launch --exit-with-session uv run pytest -v --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
           else
