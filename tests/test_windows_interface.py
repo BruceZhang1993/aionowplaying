@@ -72,10 +72,10 @@ def test_set_playback_properties_and_metadata():
     assert it._playback_properties.LoopStatus == LoopStatus.Track
 
     it.set_playback_property(PlaybackPropertyName.Position, 5000000)
-    assert it._controls._timeline.position is not None
+    assert it._timeline.position is not None
 
     it.set_playback_property(PlaybackPropertyName.Duration, 10000000)
-    assert it._controls._timeline.end_time is not None
+    assert it._timeline.end_time is not None
 
 
 def test_event_handlers_and_buttons():

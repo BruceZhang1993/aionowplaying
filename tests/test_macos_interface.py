@@ -58,10 +58,10 @@ def test_set_playback_properties_metadata_and_status():
     it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Paused)
     info = it.info_center.nowPlayingInfo()
     assert info[macos.MPNowPlayingInfoPropertyPlaybackRate] == 0
-    assert it.info_center.playback_state == macos.MPMusicPlaybackStatePaused
+    assert it.info_center.playbackState == macos.MPMusicPlaybackStatePaused
 
     it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
-    assert it.info_center.playback_state == macos.MPMusicPlaybackStatePlaying
+    assert it.info_center.playbackState == macos.MPMusicPlaybackStatePlaying
 
 
 def test_get_playback_property():
