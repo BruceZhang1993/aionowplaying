@@ -9,10 +9,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - "3.10"
-          - "3.14"
-        os: [ ubuntu-22.04, windows-latest, macos-latest ]
+        include:
+          - os: ubuntu-22.04
+            python-version: "3.10"
+          - os: ubuntu-22.04
+            python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.10"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -26,12 +33,26 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: uv sync --locked --all-extras --dev
-      - name: Run tests
+      - name: Install DBus (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo apt install -y dbus-x11
+      - name: Initialize GUI (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          open -a Finder || true
+          sleep 2
+      - name: Run tests with coverage
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt install -y dbus-x11
-            dbus-launch --exit-with-session uv run pytest -v
+            dbus-launch --exit-with-session uv run pytest -v --cov=aionowplaying --cov-report=term-missing --cov-report=xml:coverage.xml
           else
-            uv run pytest -v
+            uv run pytest -v --cov=aionowplaying --cov-report=term-missing --cov-report=xml:coverage.xml
           fi
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: coverage.xml

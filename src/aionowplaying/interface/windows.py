@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import threading
 from typing import Any
 from datetime import timedelta
@@ -42,7 +43,7 @@ class WindowsInterface(BaseInterface):
 
     def shuffle_change_requested(self, _, args: ShuffleEnabledChangeRequestedEventArgs):
         shuffle_enabled: bool = args.requested_shuffle_enabled
-        if asyncio.iscoroutinefunction(self.on_shuffle):
+        if inspect.iscoroutinefunction(self.on_shuffle):
             self._run_task(self.on_shuffle(shuffle_enabled))
         else:
             self.on_shuffle(shuffle_enabled)
@@ -50,14 +51,14 @@ class WindowsInterface(BaseInterface):
     def property_changed(self, _, args: SystemMediaTransportControlsPropertyChangedEventArgs):
         property_: SystemMediaTransportControlsProperty = args.property
         if property_ == SystemMediaTransportControlsProperty.SOUND_LEVEL:
-            if asyncio.iscoroutinefunction(self.on_volume):
+            if inspect.iscoroutinefunction(self.on_volume):
                 self._run_task(self.on_volume(self._controls.sound_level))
             else:
                 self.on_volume(self._controls.sound_level)
 
     def playback_rate_change_requested(self, _, args: PlaybackRateChangeRequestedEventArgs):
         rate: float = args.requested_playback_rate
-        if asyncio.iscoroutinefunction(self.on_rate):
+        if inspect.iscoroutinefunction(self.on_rate):
             self._run_task(self.on_rate(rate))
         else:
             self.on_rate(rate)
@@ -67,12 +68,12 @@ class WindowsInterface(BaseInterface):
         position = position.seconds * 1000 * 1000 + position.microseconds
 
         if self._playback_properties.CanSeek:
-            if asyncio.iscoroutinefunction(self.on_set_position):
+            if inspect.iscoroutinefunction(self.on_set_position):
                 self._run_task(self.on_set_position(self._playback_properties.Metadata.id_, position))
             else:
                 self.on_set_position(self._playback_properties.Metadata.id_, position)
 
-            if asyncio.iscoroutinefunction(self.on_seek):
+            if inspect.iscoroutinefunction(self.on_seek):
                 self._run_task(self.on_seek(position))
             else:
                 self.on_seek(position)
@@ -80,31 +81,31 @@ class WindowsInterface(BaseInterface):
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
         if button == SystemMediaTransportControlsButton.PLAY and self._playback_properties.CanPlay:
-            if asyncio.iscoroutinefunction(self.on_play):
+            if inspect.iscoroutinefunction(self.on_play):
                 self._run_task(self.on_play())
             else:
                 self.on_play()
             self._controls.playback_status = MediaPlaybackStatus.PLAYING
             self._playback_properties.PlaybackStatus = PlaybackStatus.Playing
         if button == SystemMediaTransportControlsButton.PAUSE and self._playback_properties.CanPause:
-            if asyncio.iscoroutinefunction(self.on_pause):
+            if inspect.iscoroutinefunction(self.on_pause):
                 self._run_task(self.on_pause())
             else:
                 self.on_pause()
             self._controls.playback_status = MediaPlaybackStatus.PAUSED
             self._playback_properties.PlaybackStatus = PlaybackStatus.Paused
         if button == SystemMediaTransportControlsButton.NEXT and self._playback_properties.CanGoNext:
-            if asyncio.iscoroutinefunction(self.on_next):
+            if inspect.iscoroutinefunction(self.on_next):
                 self._run_task(self.on_next())
             else:
                 self.on_next()
         if button == SystemMediaTransportControlsButton.PREVIOUS and self._playback_properties.CanGoPrevious:
-            if asyncio.iscoroutinefunction(self.on_previous):
+            if inspect.iscoroutinefunction(self.on_previous):
                 self._run_task(self.on_previous())
             else:
                 self.on_previous()
         if button == SystemMediaTransportControlsButton.STOP and self._playback_properties.CanControl:
-            if asyncio.iscoroutinefunction(self.on_stop):
+            if inspect.iscoroutinefunction(self.on_stop):
                 self._run_task(self.on_stop())
             else:
                 self.on_stop()
@@ -116,7 +117,7 @@ class WindowsInterface(BaseInterface):
             value = LoopStatus.Playlist
         elif mode == MediaPlaybackAutoRepeatMode.TRACK:
             value = LoopStatus.Track
-        if asyncio.iscoroutinefunction(self.on_loop_status):
+        if inspect.iscoroutinefunction(self.on_loop_status):
             self._run_task(self.on_loop_status(value))
         else:
             self.on_loop_status(value)

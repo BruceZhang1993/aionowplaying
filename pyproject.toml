@@ -45,5 +45,6 @@ Repository = "https://github.com/BruceZhang1993/aionowplaying"
 dev = [
     "pytest",
     "pytest-asyncio",
+    "pytest-cov",
     "poetry2setup>=1.0.0,<2",
 ]
