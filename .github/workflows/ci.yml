@@ -47,14 +47,11 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-            dbus-launch --exit-with-session uv run pytest -v --cov=aionowplaying --cov-report=term-missing --cov-report=xml:coverage.xml
+            dbus-launch --exit-with-session uv run pytest -v --cov --cov-branch --cov-report=xml
           else
-            uv run pytest -v --cov=aionowplaying --cov-report=term-missing --cov-report=xml:coverage.xml
+            uv run pytest -v --cov --cov-branch --cov-report=xml
           fi
-      - name: Code Coverage Summary (Linux only)
-        if: runner.os == 'Linux'
-        uses: irongut/CodeCoverageSummary@v1.3.0
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          filename: coverage.xml
-          format: markdown
-          output: console
+          token: ${{ secrets.CODECOV_TOKEN }}
