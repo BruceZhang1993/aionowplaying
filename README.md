@@ -1,9 +1,9 @@
 # aionowplaying
 A cross-platform Now Playing client
 
-## CI Status
+## Status
 
-![GitHub Workflow Matrix Status](http://github-actions.40ants.com/BruceZhang1993/aionowplaying/matrix.svg)
+[![codecov](https://codecov.io/github/BruceZhang1993/aionowplaying/graph/badge.svg?token=RQ93AOUTDC)](https://codecov.io/github/BruceZhang1993/aionowplaying)
 
 ## Usage
 ```shell
