@@ -161,17 +161,25 @@ class MacOSInterface(BaseInterface):
             self._update_property(MPMediaItemPropertyPlaybackDuration, value / 1000 / 1000)
         elif name == PlaybackPropertyName.LoopStatus:
             if self._cmd_change_repeat is not None and MPRepeatTypeOff is not None:
-                if value == LoopStatus.Track:
-                    self._cmd_change_repeat.currentRepeatType = MPRepeatTypeOne
-                elif value == LoopStatus.Playlist:
-                    self._cmd_change_repeat.currentRepeatType = MPRepeatTypeAll
-                else:
-                    self._cmd_change_repeat.currentRepeatType = MPRepeatTypeOff
+                try:
+                    if value == LoopStatus.Track:
+                        self._cmd_change_repeat.currentRepeatType = MPRepeatTypeOne
+                    elif value == LoopStatus.Playlist:
+                        self._cmd_change_repeat.currentRepeatType = MPRepeatTypeAll
+                    else:
+                        self._cmd_change_repeat.currentRepeatType = MPRepeatTypeOff
+                except Exception:
+                    # Some MediaPlayer projections expose currentRepeatType as read-only.
+                    pass
         elif name == PlaybackPropertyName.Shuffle:
             if self._cmd_change_shuffle is not None and MPShuffleTypeOff is not None:
-                self._cmd_change_shuffle.currentShuffleType = (
-                    MPShuffleTypeItems if value else MPShuffleTypeOff
-                )
+                try:
+                    self._cmd_change_shuffle.currentShuffleType = (
+                        MPShuffleTypeItems if value else MPShuffleTypeOff
+                    )
+                except Exception:
+                    # Some MediaPlayer projections expose currentShuffleType as read-only.
+                    pass
         elif name == PlaybackPropertyName.MinimumRate:
             self._update_supported_rates()
         elif name == PlaybackPropertyName.MaximumRate:
