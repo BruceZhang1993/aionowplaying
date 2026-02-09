@@ -3,7 +3,8 @@ import sys
 
 import pytest
 
-from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, LoopStatus, PropertyName
+from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, LoopStatus, \
+    PropertyName, TrackListPropertyName
 
 
 pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="Linux-only tests")
@@ -139,9 +140,11 @@ async def test_mpris2_interface_start_stop_and_getters():
 
     it.set_property(PropertyName.CanQuit, True)
     it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
+    it.set_tracklist_property(TrackListPropertyName.Tracks, ["a", "b"])
 
     assert it.get_property(PropertyName.CanQuit) is True
     assert it.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing
+    assert it.get_tracklist_property(TrackListPropertyName.Tracks) == ["a", "b"]
 
     await it.start()
     assert it.dbus is not None
@@ -155,3 +158,179 @@ async def test_mpris2_interface_start_stop_and_getters():
     it2 = mpris2.Mpris2Interface("player2")
     await it2.stop()
     monkeypatch.undo()
+
+
+def _get_dbus_prop(obj, name):
+    prop = getattr(type(obj), name)
+    if not hasattr(prop, "fget"):
+        pytest.skip("dbus_next dbus_property does not expose fget on this platform")
+    return prop.fget(obj)
+
+
+async def _set_dbus_prop(obj, name, value):
+    prop = getattr(type(obj), name)
+    if not hasattr(prop, "fset"):
+        pytest.skip("dbus_next dbus_property does not expose fset on this platform")
+    await prop.fset(obj, value)
+
+
+@pytest.mark.asyncio
+async def test_player_properties_and_methods_more_coverage():
+    calls = {
+        "rate": 0,
+        "shuffle": 0,
+        "volume": 0,
+        "loop": 0,
+        "seek": 0,
+        "set_position": 0,
+        "open_uri": 0,
+        "next": 0,
+        "previous": 0,
+        "play_pause": 0,
+        "stop": 0,
+    }
+
+    class It:
+        async def on_rate(self, _):
+            calls["rate"] += 1
+
+        async def on_shuffle(self, _):
+            calls["shuffle"] += 1
+
+        async def on_volume(self, _):
+            calls["volume"] += 1
+
+        async def on_loop_status(self, _):
+            calls["loop"] += 1
+
+        async def on_seek(self, _):
+            calls["seek"] += 1
+
+        async def on_set_position(self, _, __):
+            calls["set_position"] += 1
+
+        async def on_open_uri(self, _):
+            calls["open_uri"] += 1
+
+        async def on_next(self):
+            calls["next"] += 1
+
+        async def on_previous(self):
+            calls["previous"] += 1
+
+        async def on_play_pause(self):
+            calls["play_pause"] += 1
+
+        async def on_stop(self):
+            calls["stop"] += 1
+
+    player = mpris2.MprisPlayerServiceInterface("org.mpris.MediaPlayer2.Player", it=It())
+
+    assert _get_dbus_prop(player, "playback_status") == PlaybackStatus.Stopped.value
+    assert _get_dbus_prop(player, "loop_status") == LoopStatus.None_.value
+    assert _get_dbus_prop(player, "rate") == 1.0
+    assert _get_dbus_prop(player, "shuffle") is False
+    assert isinstance(_get_dbus_prop(player, "metadata"), dict)
+    assert _get_dbus_prop(player, "volume") == 1.0
+    assert _get_dbus_prop(player, "position") == 0
+    assert _get_dbus_prop(player, "minimum_rate") == 1.0
+    assert _get_dbus_prop(player, "maximum_rate") == 1.0
+    assert _get_dbus_prop(player, "can_go_next") is False
+    assert _get_dbus_prop(player, "can_go_previous") is False
+    assert _get_dbus_prop(player, "can_play") is False
+    assert _get_dbus_prop(player, "can_pause") is False
+    assert _get_dbus_prop(player, "can_seek") is False
+    assert _get_dbus_prop(player, "can_control") is False
+
+    await _set_dbus_prop(player, "rate", 1.25)
+    assert calls["rate"] == 1
+
+    await _set_dbus_prop(player, "shuffle", True)
+    await _set_dbus_prop(player, "volume", 0.5)
+    await _set_dbus_prop(player, "loop_status", LoopStatus.Track.value)
+    assert calls["shuffle"] == 0
+    assert calls["volume"] == 0
+    assert calls["loop"] == 0
+
+    player._properties.CanControl = True
+    await _set_dbus_prop(player, "shuffle", True)
+    await _set_dbus_prop(player, "volume", 0.5)
+    await _set_dbus_prop(player, "loop_status", LoopStatus.Track.value)
+    assert calls["shuffle"] == 1
+    assert calls["volume"] == 1
+    assert calls["loop"] == 1
+
+    await type(player).seek.__wrapped__(player, 123)
+    assert calls["seek"] == 0
+    player._properties.CanSeek = True
+    await type(player).seek.__wrapped__(player, 456)
+    assert calls["seek"] == 1
+
+    await type(player).set_position.__wrapped__(player, "/track/1", 100)
+    assert calls["set_position"] == 1
+
+    await type(player).open_uri.__wrapped__(player, "https://example.com")
+    assert calls["open_uri"] == 1
+
+    player._properties.CanGoNext = False
+    player._properties.CanGoPrevious = False
+    player._properties.CanPause = False
+    player._properties.CanControl = False
+
+    await type(player).next.__wrapped__(player)
+    await type(player).previous.__wrapped__(player)
+    await type(player).play_pause.__wrapped__(player)
+    await type(player).stop.__wrapped__(player)
+    assert calls["next"] == 0
+    assert calls["previous"] == 0
+    assert calls["play_pause"] == 0
+    assert calls["stop"] == 0
+
+    player._properties.CanGoNext = True
+    player._properties.CanGoPrevious = True
+    player._properties.CanPause = True
+    player._properties.CanControl = True
+
+    await type(player).next.__wrapped__(player)
+    await type(player).previous.__wrapped__(player)
+    await type(player).play_pause.__wrapped__(player)
+    await type(player).stop.__wrapped__(player)
+    assert calls["next"] == 1
+    assert calls["previous"] == 1
+    assert calls["play_pause"] == 1
+    assert calls["stop"] == 1
+
+
+@pytest.mark.asyncio
+async def test_service_interface_fullscreen_setter():
+    called = {"fullscreen": 0}
+
+    class It:
+        async def on_fullscreen(self, _):
+            called["fullscreen"] += 1
+
+    service = mpris2.MprisServiceInterface("org.mpris.MediaPlayer2", it=It())
+    await _set_dbus_prop(service, "fullscreen", True)
+    assert called["fullscreen"] == 0
+    assert service._properties.Fullscreen is False
+
+    service._properties.CanSetFullscreen = True
+    await _set_dbus_prop(service, "fullscreen", True)
+    assert called["fullscreen"] == 1
+    assert service._properties.Fullscreen is True
+
+    assert _get_dbus_prop(service, "fullscreen") is True
+    assert _get_dbus_prop(service, "can_quit") is False
+    assert _get_dbus_prop(service, "can_set_fullscreen") is True
+    assert _get_dbus_prop(service, "has_track_list") is False
+    assert _get_dbus_prop(service, "can_raise") is False
+    assert _get_dbus_prop(service, "identity") == ""
+    assert _get_dbus_prop(service, "desktop_entry") == ""
+    assert _get_dbus_prop(service, "supported_uri_schemes") == []
+    assert _get_dbus_prop(service, "supported_mime_types") == []
+
+
+def test_tracklist_dbus_properties():
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
+    assert _get_dbus_prop(tracklist, "can_edit_tracks") is False
+    assert _get_dbus_prop(tracklist, "tracks") == []
