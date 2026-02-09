@@ -66,7 +66,8 @@ def test_set_playback_properties_metadata_and_status():
     assert info[macos.MPMediaItemPropertyAlbumArtist] == "Album Artist"
     assert info[macos.MPMediaItemPropertyComposer] == "Composer"
     assert info[macos.MPMediaItemPropertyGenre] == "Genre1"
-    assert info[macos.MPMediaItemPropertyTrackNumber] == 2
+    if getattr(macos, "MPMediaItemPropertyAlbumTrackNumber", None) is not None:
+        assert info[macos.MPMediaItemPropertyAlbumTrackNumber] == 2
     assert info[macos.MPMediaItemPropertyPlaybackDuration] == 30
 
     it.set_playback_property(PlaybackPropertyName.Position, 5_000_000)

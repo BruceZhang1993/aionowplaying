@@ -67,7 +67,7 @@ class WindowsInterface(BaseInterface):
         rate: float = args.requested_playback_rate
         min_rate = self._playback_properties.MinimumRate
         max_rate = self._playback_properties.MaximumRate
-        if min_rate <= max_rate and (rate < min_rate or rate > max_rate):
+        if min_rate != max_rate and min_rate <= max_rate and (rate < min_rate or rate > max_rate):
             return
         if inspect.iscoroutinefunction(self.on_rate):
             self._run_task(self.on_rate(rate))
@@ -239,11 +239,8 @@ class WindowsInterface(BaseInterface):
         # Some projections expose album_artist and genres.
         if hasattr(music_props, "album_artist") and value.albumArtist:
             music_props.album_artist = ','.join(value.albumArtist)
-        if hasattr(music_props, "genres") and value.genre:
-            try:
-                music_props.genres.replace_all(value.genre)
-            except Exception:
-                pass
+        if value.genre and hasattr(music_props, "genres"):
+            music_props.genres.replace_all(value.genre)
         # self._updater.music_properties.genres: IVector
         if value.cover:  # not None and not empty
             self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.cover))

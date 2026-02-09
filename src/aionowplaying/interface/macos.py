@@ -12,8 +12,13 @@ from MediaPlayer import (
     MPNowPlayingInfoPropertyPlaybackRate, MPNowPlayingInfoPropertyElapsedPlaybackTime,
     MPRemoteCommandHandlerStatusSuccess, MPNowPlayingInfoPropertyDefaultPlaybackRate,
     MPMediaItemPropertyAlbumArtist, MPMediaItemPropertyComposer, MPMediaItemPropertyGenre,
-    MPMediaItemPropertyTrackNumber, MPMediaItemPropertyArtwork,
+    MPMediaItemPropertyArtwork,
 )
+
+try:
+    from MediaPlayer import MPMediaItemPropertyAlbumTrackNumber
+except Exception:  # pragma: no cover - depends on OS/framework availability
+    MPMediaItemPropertyAlbumTrackNumber = None
 
 try:
     from MediaPlayer import MPChangePlaybackPositionCommandEvent, MPChangePlaybackRateCommandEvent
@@ -120,8 +125,8 @@ class MacOSInterface(BaseInterface):
                 nowplaying_info[MPMediaItemPropertyComposer] = ', '.join(value.composer)
             if value.genre:
                 nowplaying_info[MPMediaItemPropertyGenre] = ', '.join(value.genre)
-            if value.trackNumber:
-                nowplaying_info[MPMediaItemPropertyTrackNumber] = value.trackNumber
+            if value.trackNumber and MPMediaItemPropertyAlbumTrackNumber is not None:
+                nowplaying_info[MPMediaItemPropertyAlbumTrackNumber] = value.trackNumber
             if value.duration:
                 nowplaying_info[MPMediaItemPropertyPlaybackDuration] = value.duration / 1000 / 1000
             # Artwork is supported via MPMediaItemArtwork but requires image data.
