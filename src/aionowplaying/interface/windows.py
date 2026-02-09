@@ -31,6 +31,13 @@ class WindowsInterface(BaseInterface):
         self._running = True
         self._playback_properties = PlaybackProperties()
         self._player = MediaPlayer()
+        # If using manual SMTC control, disable MediaPlayer's automatic integration.
+        # See: https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/system-media-transport-controls
+        try:
+            self._player.command_manager.is_enabled = False
+        except AttributeError:
+            # Some projections may not expose CommandManager; ignore.
+            pass
         self._controls: SystemMediaTransportControls = self._player.system_media_transport_controls
         self._updater: SystemMediaTransportControlsDisplayUpdater = self._controls.display_updater
         self._timeline = SystemMediaTransportControlsTimelineProperties()
@@ -58,10 +65,16 @@ class WindowsInterface(BaseInterface):
 
     def playback_rate_change_requested(self, _, args: PlaybackRateChangeRequestedEventArgs):
         rate: float = args.requested_playback_rate
+        min_rate = self._playback_properties.MinimumRate
+        max_rate = self._playback_properties.MaximumRate
+        if min_rate <= max_rate and (rate < min_rate or rate > max_rate):
+            return
         if inspect.iscoroutinefunction(self.on_rate):
             self._run_task(self.on_rate(rate))
         else:
             self.on_rate(rate)
+        self._controls.playback_rate = rate
+        self._playback_properties.Rate = rate
 
     def playback_position_change_requested(self, _, args: PlaybackPositionChangeRequestedEventArgs):
         position = args.requested_playback_position
@@ -77,6 +90,7 @@ class WindowsInterface(BaseInterface):
                 self._run_task(self.on_seek(position))
             else:
                 self.on_seek(position)
+            self._playback_properties.Position = position
 
     def button_pressed(self, _, args: SystemMediaTransportControlsButtonPressedEventArgs):
         button: SystemMediaTransportControlsButton = args.button
@@ -124,7 +138,8 @@ class WindowsInterface(BaseInterface):
         self._playback_properties.LoopStatus = value
 
     def set_property(self, name: PropertyName, value: Any):
-        pass
+        # SMTC does not expose equivalents for these properties.
+        super().set_property(name, value)
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
         if name == PlaybackPropertyName.CanControl:
@@ -144,6 +159,16 @@ class WindowsInterface(BaseInterface):
             self._playback_properties.CanGoPrevious = value
         elif name == PlaybackPropertyName.CanSeek:
             self._playback_properties.CanSeek = value
+            # SMTC requires Min/Max seek time to raise position change requests.
+            # See: https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/system-media-transport-controls
+            if value:
+                self._timeline.start_time = TimeSpan(0)
+                self._timeline.min_seek_time = TimeSpan(0)
+                duration = self._playback_properties.Duration
+                if duration:
+                    self._timeline.max_seek_time = TimeSpan(duration)
+                    self._timeline.end_time = TimeSpan(duration)
+                self._controls.update_timeline_properties(self._timeline)
         elif name == PlaybackPropertyName.PlaybackStatus:
             if value == PlaybackStatus.Playing:
                 self._controls.playback_status = MediaPlaybackStatus.PLAYING
@@ -171,11 +196,30 @@ class WindowsInterface(BaseInterface):
             self._playback_properties.LoopStatus = value
         elif name == PlaybackPropertyName.Position:
             self._timeline.position = TimeSpan(value)
+            self._timeline.start_time = TimeSpan(0)
+            self._timeline.min_seek_time = TimeSpan(0)
+            duration = self._playback_properties.Duration
+            if duration:
+                self._timeline.max_seek_time = TimeSpan(duration)
+                self._timeline.end_time = TimeSpan(duration)
             self._controls.update_timeline_properties(self._timeline)
+            self._playback_properties.Position = value
         elif name == PlaybackPropertyName.Duration:
             self._timeline.end_time = TimeSpan(value)
             self._timeline.max_seek_time = TimeSpan(value)
+            self._timeline.start_time = TimeSpan(0)
+            self._timeline.min_seek_time = TimeSpan(0)
             self._controls.update_timeline_properties(self._timeline)
+            self._playback_properties.Duration = value
+        elif name == PlaybackPropertyName.Volume:
+            # SMTC exposes SoundLevel as a read-only indicator; no volume setter.
+            self._playback_properties.Volume = value
+        elif name == PlaybackPropertyName.MinimumRate:
+            self._playback_properties.MinimumRate = value
+        elif name == PlaybackPropertyName.MaximumRate:
+            self._playback_properties.MaximumRate = value
+        else:
+            super().set_playback_property(name, value)
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
         # update media info
@@ -188,12 +232,19 @@ class WindowsInterface(BaseInterface):
 
         self._updater.app_media_id = value.id_
 
-        self._updater.music_properties.artist = ','.join(value.artist)
-        self._updater.music_properties.title = value.title
-        self._updater.music_properties.album_title = value.album
+        music_props = self._updater.music_properties
+        music_props.artist = ','.join(value.artist)
+        music_props.title = value.title
+        music_props.album_title = value.album
+        # Some projections expose album_artist and genres.
+        if hasattr(music_props, "album_artist") and value.albumArtist:
+            music_props.album_artist = ','.join(value.albumArtist)
+        if hasattr(music_props, "genres") and value.genre:
+            try:
+                music_props.genres.replace_all(value.genre)
+            except Exception:
+                pass
         # self._updater.music_properties.genres: IVector
-        # fixme: implement genres field
-        # self._updater.music_properties.genres.replace_all(Array('u', 8))
         if value.cover:  # not None and not empty
             self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.cover))
         self._updater.update()
@@ -205,10 +256,16 @@ class WindowsInterface(BaseInterface):
         self._controls.update_timeline_properties(self._timeline)
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
-        pass
+        super().set_tracklist_property(name, value)
+
+    def get_property(self, name: PropertyName) -> Any:
+        return super().get_property(name)
 
     def get_playback_property(self, name: PlaybackPropertyName) -> Any:
         return getattr(self._playback_properties, name.value)
+
+    def get_tracklist_property(self, name: TrackListPropertyName) -> Any:
+        return super().get_tracklist_property(name)
 
     async def start(self):
         # Don't need a background server for Windows

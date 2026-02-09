@@ -1,6 +1,7 @@
 import pytest
 
-from aionowplaying.interface.base import BaseInterface, PlaybackStatus, PlaybackProperties
+from aionowplaying.interface.base import BaseInterface, PlaybackStatus, PlaybackProperties, PropertyName, \
+    PlaybackPropertyName, TrackListPropertyName
 
 
 class DummyInterface(BaseInterface):
@@ -27,6 +28,17 @@ def test_metadata_defaults():
     assert meta.title == "Unknown"
     assert meta.duration == 0
     assert meta.artist == []
+
+
+def test_base_property_storage_roundtrip():
+    it = BaseInterface("base")
+    it.set_property(PropertyName.CanQuit, True)
+    it.set_playback_property(PlaybackPropertyName.Volume, 0.25)
+    it.set_tracklist_property(TrackListPropertyName.CanEditTracks, True)
+
+    assert it.get_property(PropertyName.CanQuit) is True
+    assert it.get_playback_property(PlaybackPropertyName.Volume) == 0.25
+    assert it.get_tracklist_property(TrackListPropertyName.CanEditTracks) is True
 
 
 @pytest.mark.asyncio

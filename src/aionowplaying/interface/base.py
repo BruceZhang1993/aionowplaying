@@ -112,7 +112,10 @@ class PlaybackProperties(BaseModel):
 
 class BaseInterface:
     def __init__(self, name: str):
-        pass
+        self.name = name
+        self._properties = PlayerProperties()
+        self._playback_properties = PlaybackProperties()
+        self._tracklist_properties = TrackListProperties()
 
     async def start(self):
         """
@@ -238,19 +241,19 @@ class BaseInterface:
         pass
 
     def set_property(self, name: PropertyName, value: Any):
-        pass
+        setattr(self._properties, name.value, value)
 
     def set_playback_property(self, name: PlaybackPropertyName, value: Any):
-        pass
+        setattr(self._playback_properties, name.value, value)
 
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
-        pass
+        setattr(self._tracklist_properties, name.value, value)
 
     def get_property(self, name: PropertyName) -> Any:
-        pass
+        return getattr(self._properties, name.value)
 
     def get_playback_property(self, name: PlaybackPropertyName) -> Any:
-        pass
+        return getattr(self._playback_properties, name.value)
 
     def get_tracklist_property(self, name: TrackListPropertyName) -> Any:
-        pass
+        return getattr(self._tracklist_properties, name.value)

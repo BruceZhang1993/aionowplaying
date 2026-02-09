@@ -2,10 +2,12 @@ import asyncio
 import os
 import sys
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 
-from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus
+from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, PropertyName, \
+    TrackListPropertyName
 
 
 pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS-only tests")
@@ -49,6 +51,11 @@ def test_set_playback_properties_metadata_and_status():
     meta.title = "Song"
     meta.artist = ["Artist1", "Artist2"]
     meta.album = "Album"
+    meta.albumArtist = ["Album Artist"]
+    meta.composer = ["Composer"]
+    meta.genre = ["Genre1"]
+    meta.trackNumber = 2
+    meta.duration = 30_000_000
 
     it.set_playback_property(PlaybackPropertyName.Metadata, meta)
     info = it.info_center.nowPlayingInfo()
@@ -56,6 +63,11 @@ def test_set_playback_properties_metadata_and_status():
     assert info[macos.MPMediaItemPropertyTitle] == "Song"
     assert info[macos.MPMediaItemPropertyArtist] == "Artist1, Artist2"
     assert info[macos.MPMediaItemPropertyAlbumTitle] == "Album"
+    assert info[macos.MPMediaItemPropertyAlbumArtist] == "Album Artist"
+    assert info[macos.MPMediaItemPropertyComposer] == "Composer"
+    assert info[macos.MPMediaItemPropertyGenre] == "Genre1"
+    assert info[macos.MPMediaItemPropertyTrackNumber] == 2
+    assert info[macos.MPMediaItemPropertyPlaybackDuration] == 30
 
     it.set_playback_property(PlaybackPropertyName.Position, 5_000_000)
     it.set_playback_property(PlaybackPropertyName.Duration, 30_000_000)
@@ -97,3 +109,80 @@ def test_get_playback_property():
 
     assert it.get_playback_property(PlaybackPropertyName.Position) == 2
     assert it.get_playback_property(PlaybackPropertyName.Rate) == 1.5
+
+
+def test_property_and_tracklist_roundtrip():
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    it.set_property(PropertyName.CanQuit, True)
+    it.set_tracklist_property(TrackListPropertyName.CanEditTracks, True)
+
+    assert it.get_property(PropertyName.CanQuit) is True
+    assert it.get_tracklist_property(TrackListPropertyName.CanEditTracks) is True
+
+
+def _read_enabled(command):
+    value = command.enabled
+    return value() if callable(value) else value
+
+
+@pytest.mark.asyncio
+async def test_remote_command_handlers_and_enabling():
+    macos = macos_module
+    _ensure_app_ready()
+
+    class TestInterface(macos.MacOSInterface):
+        def __init__(self, name: str):
+            super().__init__(name)
+            self.calls = []
+
+        async def on_set_position(self, _track_id, position):
+            self.calls.append(("set_position", position))
+
+        async def on_seek(self, position):
+            self.calls.append(("seek", position))
+
+        async def on_rate(self, rate):
+            self.calls.append(("rate", rate))
+
+        async def on_loop_status(self, status):
+            self.calls.append(("loop", status))
+
+        async def on_shuffle(self, shuffle):
+            self.calls.append(("shuffle", shuffle))
+
+    it = TestInterface("test")
+    it.set_playback_property(PlaybackPropertyName.CanSeek, True)
+    it.set_playback_property(PlaybackPropertyName.CanControl, True)
+    it.set_playback_property(PlaybackPropertyName.CanPlay, True)
+    it.set_playback_property(PlaybackPropertyName.CanPause, True)
+    it.set_playback_property(PlaybackPropertyName.CanGoNext, True)
+    it.set_playback_property(PlaybackPropertyName.CanGoPrevious, True)
+
+    assert _read_enabled(it.cmd_center.playCommand()) is True
+    assert _read_enabled(it.cmd_center.pauseCommand()) is True
+    assert _read_enabled(it.cmd_center.nextTrackCommand()) is True
+    assert _read_enabled(it.cmd_center.previousTrackCommand()) is True
+
+    if it._cmd_change_position is not None:
+        assert _read_enabled(it._cmd_change_position) is True
+        await it._handle_change_playback_position(SimpleNamespace(positionTime=12.5))
+
+    if it._cmd_change_rate is not None:
+        await it._handle_change_playback_rate(SimpleNamespace(playbackRate=1.25))
+
+    if it._cmd_change_repeat is not None and macos.MPRepeatTypeOne is not None:
+        await it._handle_change_repeat_mode(SimpleNamespace(repeatType=macos.MPRepeatTypeOne))
+
+    if it._cmd_change_shuffle is not None and macos.MPShuffleTypeItems is not None:
+        await it._handle_change_shuffle_mode(SimpleNamespace(shuffleType=macos.MPShuffleTypeItems))
+
+    assert ("set_position", 12_500_000) in it.calls
+    assert ("seek", 12_500_000) in it.calls
+    assert ("rate", 1.25) in it.calls
+    if macos.MPRepeatTypeOne is not None:
+        assert any(call[0] == "loop" for call in it.calls)
+    if macos.MPShuffleTypeItems is not None:
+        assert ("shuffle", True) in it.calls

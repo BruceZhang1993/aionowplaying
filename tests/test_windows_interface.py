@@ -5,7 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, LoopStatus
+from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, LoopStatus, \
+    PropertyName, TrackListPropertyName
 
 
 pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows-only tests")
@@ -48,6 +49,8 @@ def test_set_playback_properties_and_metadata():
     meta.title = "Song"
     meta.artist = ["Artist"]
     meta.album = "Album"
+    meta.albumArtist = ["Album Artist"]
+    meta.genre = ["Rock", "Pop"]
     meta.id_ = "id1"
     meta.duration = 120000000
     meta.cover = "http://example.com/cover.jpg"
@@ -56,6 +59,8 @@ def test_set_playback_properties_and_metadata():
     assert it._updater.music_properties.title == "Song"
     assert it._updater.music_properties.artist == "Artist"
     assert it._updater.music_properties.album_title == "Album"
+    if hasattr(it._updater.music_properties, "album_artist"):
+        assert it._updater.music_properties.album_artist == "Album Artist"
     assert it._updater.thumbnail is not None
     assert it._timeline.max_seek_time is not None
 
@@ -76,6 +81,13 @@ def test_set_playback_properties_and_metadata():
 
     it.set_playback_property(PlaybackPropertyName.Duration, 10000000)
     assert it._timeline.end_time is not None
+
+    it.set_playback_property(PlaybackPropertyName.Volume, 0.4)
+    assert it._playback_properties.Volume == 0.4
+    it.set_playback_property(PlaybackPropertyName.MinimumRate, 0.75)
+    it.set_playback_property(PlaybackPropertyName.MaximumRate, 1.5)
+    assert it._playback_properties.MinimumRate == 0.75
+    assert it._playback_properties.MaximumRate == 1.5
 
 
 def test_event_handlers_and_buttons():
@@ -159,3 +171,15 @@ def test_event_handlers_and_buttons():
     assert "seek" in it.called
     assert "set_position" in it.called
     assert "loop" in it.called
+
+
+def test_windows_property_and_tracklist_roundtrip():
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    it.set_property(PropertyName.CanQuit, True)
+    it.set_tracklist_property(TrackListPropertyName.CanEditTracks, True)
+
+    assert it.get_property(PropertyName.CanQuit) is True
+    assert it.get_tracklist_property(TrackListPropertyName.CanEditTracks) is True
