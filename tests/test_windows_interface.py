@@ -1,5 +1,6 @@
 from datetime import timedelta
 import asyncio
+import threading
 import sys
 from types import SimpleNamespace
 
@@ -183,3 +184,145 @@ def test_windows_property_and_tracklist_roundtrip():
 
     assert it.get_property(PropertyName.CanQuit) is True
     assert it.get_tracklist_property(TrackListPropertyName.CanEditTracks) is True
+
+
+def test_playback_rate_change_rejects_out_of_range():
+    windows = windows_module
+    _ensure_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.called = False
+
+        def on_rate(self, _):
+            self.called = True
+
+    it = TestInterface()
+    it.set_playback_property(PlaybackPropertyName.MinimumRate, 0.5)
+    it.set_playback_property(PlaybackPropertyName.MaximumRate, 1.5)
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=2.0))
+
+    assert it.called is False
+    assert it._playback_properties.Rate != 2.0
+
+
+def test_playback_position_ignored_when_cannot_seek():
+    windows = windows_module
+    _ensure_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.called = []
+
+        def on_seek(self, _):
+            self.called.append("seek")
+
+        def on_set_position(self, *_):
+            self.called.append("set_position")
+
+    it = TestInterface()
+    it.set_playback_property(PlaybackPropertyName.CanSeek, False)
+    it.playback_position_change_requested(
+        None,
+        SimpleNamespace(requested_playback_position=timedelta(seconds=5)),
+    )
+
+    assert "seek" not in it.called
+    assert "set_position" not in it.called
+
+
+def test_button_pressed_respects_capabilities():
+    windows = windows_module
+    _ensure_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.called = []
+
+        def on_play(self):
+            self.called.append("play")
+
+    it = TestInterface()
+    it.set_playback_property(PlaybackPropertyName.CanPlay, False)
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PLAY))
+
+    assert "play" not in it.called
+
+
+def test_auto_repeat_mode_variants():
+    windows = windows_module
+    _ensure_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.called = []
+
+        def on_loop_status(self, value):
+            self.called.append(value)
+
+    it = TestInterface()
+    it.auto_repeat_mode_change_requested(
+        None,
+        SimpleNamespace(requested_auto_repeat_mode=windows.MediaPlaybackAutoRepeatMode.TRACK),
+    )
+    it.auto_repeat_mode_change_requested(
+        None,
+        SimpleNamespace(requested_auto_repeat_mode=windows.MediaPlaybackAutoRepeatMode.NONE),
+    )
+
+    assert LoopStatus.Track in it.called
+    assert LoopStatus.None_ in it.called
+
+
+def test_run_task_from_non_main_thread():
+    windows = windows_module
+    _ensure_event_loop()
+    loop = asyncio.get_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.done = False
+
+        async def _mark(self):
+            self.done = True
+
+    it = TestInterface()
+
+    def worker():
+        it._run_task(it._mark())
+
+    thread = threading.Thread(target=worker)
+    thread.start()
+
+    for _ in range(20):
+        loop.run_until_complete(asyncio.sleep(0))
+        if it.done:
+            break
+
+    thread.join()
+    assert it.done is True
+
+
+def test_update_metadata_media_types():
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    meta = PlaybackProperties.MetadataBean()
+    meta.title = "Image"
+    meta.artist = ["Artist"]
+    meta.album = "Album"
+    meta.id_ = "id-image"
+    meta.duration = 1_000_000
+    meta.media_type = windows.MediaType.Image
+    it.set_playback_property(PlaybackPropertyName.Metadata, meta)
+    assert it._updater.type == windows.MediaPlaybackType.IMAGE
+
+    meta.media_type = windows.MediaType.Video
+    it.set_playback_property(PlaybackPropertyName.Metadata, meta)
+    assert it._updater.type == windows.MediaPlaybackType.VIDEO

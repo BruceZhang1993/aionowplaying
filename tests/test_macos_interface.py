@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import sys
 from datetime import datetime, timedelta
@@ -7,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, PropertyName, \
-    TrackListPropertyName
+    TrackListPropertyName, LoopStatus
 
 
 pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS-only tests")
@@ -40,6 +41,21 @@ async def test_create_handler_executes_task():
     wrapped(None)
     await asyncio.sleep(0)
     assert called["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_create_event_handler_executes_task_with_event():
+    macos = macos_module
+    called = {"event": None}
+
+    async def handler(event):
+        called["event"] = event
+
+    wrapped = macos.create_event_handler(handler)
+    marker = object()
+    wrapped(marker)
+    await asyncio.sleep(0)
+    assert called["event"] is marker
 
 
 def test_set_playback_properties_metadata_and_status():
@@ -122,6 +138,72 @@ def test_property_and_tracklist_roundtrip():
 
     assert it.get_property(PropertyName.CanQuit) is True
     assert it.get_tracklist_property(TrackListPropertyName.CanEditTracks) is True
+
+
+def test_update_supported_rates_and_loop_shuffle_controls():
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    if it._cmd_change_rate is not None:
+        it.set_playback_property(PlaybackPropertyName.MinimumRate, 2.0)
+        it.set_playback_property(PlaybackPropertyName.MaximumRate, 1.0)
+        # Invalid min/max should not update supported rates.
+        current_rates = getattr(it._cmd_change_rate, "supportedPlaybackRates", None)
+        it.set_playback_property(PlaybackPropertyName.MinimumRate, 0.5)
+        it.set_playback_property(PlaybackPropertyName.MaximumRate, 2.0)
+        updated_rates = getattr(it._cmd_change_rate, "supportedPlaybackRates", None)
+        if current_rates is not None and updated_rates is not None:
+            assert 0.5 in updated_rates
+            assert 2.0 in updated_rates
+
+    if it._cmd_change_repeat is not None and macos.MPRepeatTypeOff is not None:
+        it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.Track)
+        assert it._cmd_change_repeat.currentRepeatType == macos.MPRepeatTypeOne
+        it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.Playlist)
+        assert it._cmd_change_repeat.currentRepeatType == macos.MPRepeatTypeAll
+        it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.None_)
+        assert it._cmd_change_repeat.currentRepeatType == macos.MPRepeatTypeOff
+
+    if it._cmd_change_shuffle is not None and macos.MPShuffleTypeOff is not None:
+        it.set_playback_property(PlaybackPropertyName.Shuffle, True)
+        assert it._cmd_change_shuffle.currentShuffleType == macos.MPShuffleTypeItems
+        it.set_playback_property(PlaybackPropertyName.Shuffle, False)
+        assert it._cmd_change_shuffle.currentShuffleType == macos.MPShuffleTypeOff
+
+
+def test_load_artwork_paths(tmp_path):
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    missing = it._load_artwork(str(tmp_path / "missing.png"))
+    assert missing is None
+
+    png_bytes = base64.b64decode(
+        b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGD4DwAB"
+        b"BAEAi0P9twAAAABJRU5ErkJggg=="
+    )
+    img_path = tmp_path / "cover.png"
+    img_path.write_bytes(png_bytes)
+
+    artwork = it._load_artwork(str(img_path))
+    if macos.MPMediaItemArtwork is not None:
+        assert artwork is not None
+
+
+def test_set_command_enabled_fallback():
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    class DummyCommand:
+        def __init__(self):
+            self.isEnabled = False
+
+    cmd = DummyCommand()
+    it._set_command_enabled(cmd, True)
+    assert cmd.isEnabled is True
 
 
 def _read_enabled(command):

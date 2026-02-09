@@ -311,12 +311,3 @@ class Mpris2Interface(BaseInterface):
         if self.dbus is None:
             return
         self.dbus.disconnect()
-
-
-if __name__ == '__main__':
-    import asyncio
-
-    mp = Mpris2Interface('aionowplaying')
-    mp.set_property(PropertyName.CanQuit, True)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(mp.start())
