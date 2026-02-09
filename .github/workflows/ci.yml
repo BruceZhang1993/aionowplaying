@@ -47,9 +47,9 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-            dbus-launch --exit-with-session uv run pytest -v --cov --cov-branch --cov-report=xml
+            dbus-launch --exit-with-session uv run pytest -v --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
           else
-            uv run pytest -v --cov --cov-branch --cov-report=xml
+            uv run pytest -v --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
           fi
           test_exit_code=$?
           if [ "$RUNNER_OS" == "macOS" ] && [ "$test_exit_code" -eq 137 ]; then
@@ -57,6 +57,11 @@ jobs:
             exit 0
           fi
           exit "$test_exit_code"
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
