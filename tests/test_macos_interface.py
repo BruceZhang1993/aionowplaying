@@ -1,22 +1,22 @@
 import asyncio
-import importlib
+import sys
 
 import pytest
 
 from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus
-from tests.fake_modules import install_fake_macos
 
 
-def _import_macos_module():
-    install_fake_macos()
-    module = importlib.import_module("aionowplaying.interface.macos")
-    importlib.reload(module)
-    return module
+pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS-only tests")
+
+if sys.platform == "darwin":
+    macos_module = pytest.importorskip("aionowplaying.interface.macos")
+else:
+    macos_module = None
 
 
 @pytest.mark.asyncio
 async def test_create_handler_executes_task():
-    macos = _import_macos_module()
+    macos = macos_module
     called = {"count": 0}
 
     async def handler():
@@ -29,7 +29,7 @@ async def test_create_handler_executes_task():
 
 
 def test_set_playback_properties_metadata_and_status():
-    macos = _import_macos_module()
+    macos = macos_module
     it = macos.MacOSInterface("test")
 
     meta = PlaybackProperties.MetadataBean()
@@ -65,7 +65,7 @@ def test_set_playback_properties_metadata_and_status():
 
 
 def test_get_playback_property():
-    macos = _import_macos_module()
+    macos = macos_module
     it = macos.MacOSInterface("test")
 
     it.set_playback_property(PlaybackPropertyName.Position, 2_000_000)

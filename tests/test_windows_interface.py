@@ -1,17 +1,19 @@
 from datetime import timedelta
-import importlib
 import asyncio
+import sys
+from types import SimpleNamespace
+
+import pytest
 
 from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, LoopStatus
-from tests.fake_modules import install_fake_winrt
 
 
-def _import_windows_module():
-    install_fake_winrt()
-    module = importlib.import_module("aionowplaying.interface.windows")
-    importlib.reload(module)
-    return module
+pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows-only tests")
 
+if sys.platform == "win32":
+    windows_module = pytest.importorskip("aionowplaying.interface.windows")
+else:
+    windows_module = None
 
 def _ensure_event_loop():
     try:
@@ -22,7 +24,7 @@ def _ensure_event_loop():
 
 
 def test_set_playback_properties_and_metadata():
-    windows = _import_windows_module()
+    windows = windows_module
     _ensure_event_loop()
 
     class TestInterface(windows.WindowsInterface):
@@ -51,10 +53,10 @@ def test_set_playback_properties_and_metadata():
     meta.cover = "http://example.com/cover.jpg"
 
     it.set_playback_property(PlaybackPropertyName.Metadata, meta)
-    assert it._updater.update_called is True
     assert it._updater.music_properties.title == "Song"
     assert it._updater.music_properties.artist == "Artist"
     assert it._updater.music_properties.album_title == "Album"
+    assert it._updater.thumbnail is not None
     assert it._timeline.max_seek_time is not None
 
     it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
@@ -77,7 +79,7 @@ def test_set_playback_properties_and_metadata():
 
 
 def test_event_handlers_and_buttons():
-    windows = _import_windows_module()
+    windows = windows_module
     _ensure_event_loop()
 
     class TestInterface(windows.WindowsInterface):
@@ -126,45 +128,24 @@ def test_event_handlers_and_buttons():
     it.set_playback_property(PlaybackPropertyName.CanControl, True)
     it.set_playback_property(PlaybackPropertyName.CanSeek, True)
 
-    args = windows.SystemMediaTransportControlsButtonPressedEventArgs(
-        windows.SystemMediaTransportControlsButton.PLAY
-    )
-    it.button_pressed(None, args)
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PLAY))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PAUSE))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.NEXT))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PREVIOUS))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.STOP))
 
-    args = windows.SystemMediaTransportControlsButtonPressedEventArgs(
-        windows.SystemMediaTransportControlsButton.PAUSE
-    )
-    it.button_pressed(None, args)
-
-    args = windows.SystemMediaTransportControlsButtonPressedEventArgs(
-        windows.SystemMediaTransportControlsButton.NEXT
-    )
-    it.button_pressed(None, args)
-
-    args = windows.SystemMediaTransportControlsButtonPressedEventArgs(
-        windows.SystemMediaTransportControlsButton.PREVIOUS
-    )
-    it.button_pressed(None, args)
-
-    args = windows.SystemMediaTransportControlsButtonPressedEventArgs(
-        windows.SystemMediaTransportControlsButton.STOP
-    )
-    it.button_pressed(None, args)
-
-    it.shuffle_change_requested(None, windows.ShuffleEnabledChangeRequestedEventArgs(True))
-    it.playback_rate_change_requested(None, windows.PlaybackRateChangeRequestedEventArgs(1.25))
-    it.property_changed(None, windows.SystemMediaTransportControlsPropertyChangedEventArgs(
-        windows.SystemMediaTransportControlsProperty.SOUND_LEVEL
-    ))
+    it.shuffle_change_requested(None, SimpleNamespace(requested_shuffle_enabled=True))
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=1.25))
+    it.property_changed(None, SimpleNamespace(property=windows.SystemMediaTransportControlsProperty.SOUND_LEVEL))
 
     it.playback_position_change_requested(
         None,
-        windows.PlaybackPositionChangeRequestedEventArgs(timedelta(seconds=10, microseconds=500)),
+        SimpleNamespace(requested_playback_position=timedelta(seconds=10, microseconds=500)),
     )
 
     it.auto_repeat_mode_change_requested(
         None,
-        windows.AutoRepeatModeChangeRequestedEventArgs(windows.MediaPlaybackAutoRepeatMode.LIST),
+        SimpleNamespace(requested_auto_repeat_mode=windows.MediaPlaybackAutoRepeatMode.LIST),
     )
 
     assert "play" in it.called

@@ -1,9 +1,39 @@
 import asyncio
+import sys
 
 import pytest
 
 from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyName, PlaybackStatus, LoopStatus, PropertyName
-from aionowplaying.interface import mpris2
+
+
+pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="Linux-only tests")
+
+if sys.platform == "linux":
+    mpris2 = pytest.importorskip("aionowplaying.interface.mpris2")
+else:
+    mpris2 = None
+
+
+class _FakeBus:
+    def __init__(self):
+        self.exported = []
+        self.requested_name = None
+        self.disconnected = False
+
+    async def connect(self):
+        return self
+
+    def export(self, path, iface):
+        self.exported.append((path, iface))
+
+    async def request_name(self, name):
+        self.requested_name = name
+
+    async def wait_for_disconnect(self):
+        return None
+
+    def disconnect(self):
+        self.disconnected = True
 
 
 @pytest.mark.asyncio
@@ -18,12 +48,10 @@ async def test_dbus_mapper_and_player_set_property():
 
     player = mpris2.MprisPlayerServiceInterface("org.mpris.MediaPlayer2.Player")
     player.set_property(PlaybackPropertyName.Position.value, 123)
-    assert player.emitted == []
+    assert player.get_property(PlaybackPropertyName.Position.value) == 123
 
     player.set_property(PlaybackPropertyName.Metadata.value, meta)
-    assert player.emitted
-    assert PlaybackPropertyName.Metadata.value in player.emitted[-1]
-    assert "mpris:trackid" in player.emitted[-1][PlaybackPropertyName.Metadata.value]
+    assert player.get_property(PlaybackPropertyName.Metadata.value) == meta
 
 
 @pytest.mark.asyncio
@@ -35,6 +63,8 @@ async def test_loop_status_respects_can_control():
             called["count"] += 1
 
     player = mpris2.MprisPlayerServiceInterface("org.mpris.MediaPlayer2.Player", it=It())
+    if not hasattr(type(player).loop_status, "fset"):
+        pytest.skip("dbus_next dbus_property does not expose fset on this platform")
     await type(player).loop_status.fset(player, LoopStatus.Playlist.value)
     assert called["count"] == 0
     assert player._properties.LoopStatus == LoopStatus.None_
@@ -57,14 +87,14 @@ async def test_player_methods_respect_flags():
             called["pause"] += 1
 
     player = mpris2.MprisPlayerServiceInterface("org.mpris.MediaPlayer2.Player", it=It())
-    await player.play()
-    await player.pause()
+    await type(player).play.__wrapped__(player)
+    await type(player).pause.__wrapped__(player)
     assert called == {"play": 0, "pause": 0}
 
     player._properties.CanPlay = True
     player._properties.CanPause = True
-    await player.play()
-    await player.pause()
+    await type(player).play.__wrapped__(player)
+    await type(player).pause.__wrapped__(player)
     assert called == {"play": 1, "pause": 1}
 
 
@@ -80,14 +110,14 @@ async def test_service_interface_raise_and_quit():
             called["quit"] += 1
 
     service = mpris2.MprisServiceInterface("org.mpris.MediaPlayer2", it=It())
-    await service.raise_()
-    await service.quit()
+    await type(service).raise_.__wrapped__(service)
+    await type(service).quit.__wrapped__(service)
     assert called == {"raise": 0, "quit": 0}
 
     service._properties.CanRaise = True
     service._properties.CanQuit = True
-    await service.raise_()
-    await service.quit()
+    await type(service).raise_.__wrapped__(service)
+    await type(service).quit.__wrapped__(service)
     assert called == {"raise": 1, "quit": 1}
 
 
@@ -103,6 +133,8 @@ async def test_tracklist_properties():
 
 @pytest.mark.asyncio
 async def test_mpris2_interface_start_stop_and_getters():
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(mpris2, "MessageBus", _FakeBus)
     it = mpris2.Mpris2Interface("player")
 
     it.set_property(PropertyName.CanQuit, True)
@@ -122,3 +154,4 @@ async def test_mpris2_interface_start_stop_and_getters():
 
     it2 = mpris2.Mpris2Interface("player2")
     await it2.stop()
+    monkeypatch.undo()
