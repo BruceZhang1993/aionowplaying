@@ -1,6 +1,7 @@
 from datetime import timedelta
 import asyncio
 import threading
+import time
 import sys
 from types import SimpleNamespace
 
@@ -282,6 +283,7 @@ def test_run_task_from_non_main_thread():
     windows = windows_module
     _ensure_event_loop()
     loop = asyncio.get_event_loop()
+    loop_started = threading.Event()
 
     class TestInterface(windows.WindowsInterface):
         def __init__(self):
@@ -293,18 +295,29 @@ def test_run_task_from_non_main_thread():
 
     it = TestInterface()
 
+    def loop_runner():
+        asyncio.set_event_loop(loop)
+        loop_started.set()
+        loop.run_forever()
+
+    loop_thread = threading.Thread(target=loop_runner)
+    loop_thread.start()
+    loop_started.wait(timeout=1)
+
     def worker():
         it._run_task(it._mark())
 
     thread = threading.Thread(target=worker)
     thread.start()
+    thread.join()
 
-    for _ in range(20):
-        loop.run_until_complete(asyncio.sleep(0))
+    for _ in range(50):
         if it.done:
             break
+        time.sleep(0.01)
 
-    thread.join()
+    loop.call_soon_threadsafe(loop.stop)
+    loop_thread.join(timeout=1)
     assert it.done is True
 
 

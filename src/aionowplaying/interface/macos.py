@@ -288,7 +288,11 @@ class MacOSInterface(BaseInterface):
         if min_rate is None or max_rate is None or min_rate > max_rate:
             return
         rates = sorted(set([min_rate, 1.0, max_rate]))
-        self._cmd_change_rate.supportedPlaybackRates = rates
+        try:
+            self._cmd_change_rate.supportedPlaybackRates = rates
+        except Exception:
+            # Some MediaPlayer projections expose supportedPlaybackRates as read-only.
+            return
 
     def _load_artwork(self, cover: str):
         # MediaPlayer expects image data; remote URLs may block. Only load local files.

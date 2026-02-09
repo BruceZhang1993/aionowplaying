@@ -223,23 +223,27 @@ class WindowsInterface(BaseInterface):
 
     def _update_metadata(self, value: PlaybackProperties.MetadataBean):
         # update media info
+        is_music = True
         if value.media_type == MediaType.Image:
             self._updater.type = MediaPlaybackType.IMAGE
+            is_music = False
         elif value.media_type == MediaType.Video:
             self._updater.type = MediaPlaybackType.VIDEO
+            is_music = False
         else:
             self._updater.type = MediaPlaybackType.MUSIC
 
         self._updater.app_media_id = value.id_
 
-        music_props = self._updater.music_properties
-        music_props.artist = ','.join(value.artist)
-        music_props.title = value.title
-        music_props.album_title = value.album
-        # Some projections expose album_artist and genres.
-        if hasattr(music_props, "album_artist") and value.albumArtist:
-            music_props.album_artist = ','.join(value.albumArtist)
-        # self._updater.music_properties.genres: IVector
+        if is_music:
+            music_props = self._updater.music_properties
+            music_props.artist = ','.join(value.artist)
+            music_props.title = value.title
+            music_props.album_title = value.album
+            # Some projections expose album_artist and genres.
+            if hasattr(music_props, "album_artist") and value.albumArtist:
+                music_props.album_artist = ','.join(value.albumArtist)
+            # self._updater.music_properties.genres: IVector
         if value.cover:  # not None and not empty
             self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.cover))
         self._updater.update()
