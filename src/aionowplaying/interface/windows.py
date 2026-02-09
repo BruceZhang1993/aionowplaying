@@ -5,6 +5,7 @@ from typing import Any
 from datetime import timedelta
 
 from winrt.system import Array
+from winrt.windows.foundation.collections import IVector
 from winrt.windows.foundation import Uri
 from winrt.windows.media import SystemMediaTransportControlsTimelineProperties, SystemMediaTransportControls, \
     SystemMediaTransportControlsDisplayUpdater, MediaPlaybackStatus, MediaPlaybackType, MediaPlaybackAutoRepeatMode, \
@@ -240,7 +241,7 @@ class WindowsInterface(BaseInterface):
         if hasattr(music_props, "album_artist") and value.albumArtist:
             music_props.album_artist = ','.join(value.albumArtist)
         if value.genre and hasattr(music_props, "genres"):
-            music_props.genres.replace_all(Array('u', value.genre))
+            music_props.genres.replace_all(IVector[str](value.genre))
         # self._updater.music_properties.genres: IVector
         if value.cover:  # not None and not empty
             self._updater.thumbnail = RandomAccessStreamReference.create_from_uri(Uri(value.cover))
