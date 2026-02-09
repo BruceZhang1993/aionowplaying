@@ -30,6 +30,12 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: sudo apt install -y dbus-x11
+      - name: Initialize GUI (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          open -a Finder || true
+          sleep 2
       - name: Run tests with coverage
         shell: bash
         run: |

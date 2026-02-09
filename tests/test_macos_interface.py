@@ -1,5 +1,7 @@
 import asyncio
+import os
 import sys
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -7,6 +9,16 @@ from aionowplaying.interface.base import PlaybackProperties, PlaybackPropertyNam
 
 
 pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS-only tests")
+
+
+def _ensure_app_ready():
+    # Best-effort: initialize a GUI app and give the run loop a chance.
+    from Cocoa import NSApplication
+    from Foundation import NSRunLoop, NSDate
+
+    NSApplication.sharedApplication()
+    run_loop = NSRunLoop.currentRunLoop()
+    run_loop.runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
 
 if sys.platform == "darwin":
     macos_module = pytest.importorskip("aionowplaying.interface.macos")
@@ -30,6 +42,7 @@ async def test_create_handler_executes_task():
 
 def test_set_playback_properties_metadata_and_status():
     macos = macos_module
+    _ensure_app_ready()
     it = macos.MacOSInterface("test")
 
     meta = PlaybackProperties.MetadataBean()
@@ -76,6 +89,7 @@ def test_set_playback_properties_metadata_and_status():
 
 def test_get_playback_property():
     macos = macos_module
+    _ensure_app_ready()
     it = macos.MacOSInterface("test")
 
     it.set_playback_property(PlaybackPropertyName.Position, 2_000_000)
