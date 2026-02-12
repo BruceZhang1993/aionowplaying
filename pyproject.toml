@@ -49,3 +49,6 @@ dev = [
     "pytest-cov",
     "poetry2setup>=1.0.0,<2",
 ]
+
+[tool.coverage.run]
+source = ["aionowplaying"]
