@@ -65,7 +65,7 @@ async def test_loop_status_respects_can_control():
 
     player = mpris2.MprisPlayerServiceInterface("org.mpris.MediaPlayer2.Player", it=It())
     if not hasattr(type(player).loop_status, "fset"):
-        pytest.skip("dbus_next dbus_property does not expose fset on this platform")
+        pytest.skip("dbus_fast dbus_property does not expose fset on this platform")
     await type(player).loop_status.fset(player, LoopStatus.Playlist.value)
     assert called["count"] == 0
     assert player._properties.LoopStatus == LoopStatus.None_
@@ -163,14 +163,14 @@ async def test_mpris2_interface_start_stop_and_getters():
 def _get_dbus_prop(obj, name):
     prop = getattr(type(obj), name)
     if not hasattr(prop, "fget"):
-        pytest.skip("dbus_next dbus_property does not expose fget on this platform")
+        pytest.skip("dbus_fast dbus_property does not expose fget on this platform")
     return prop.fget(obj)
 
 
 async def _set_dbus_prop(obj, name, value):
     prop = getattr(type(obj), name)
     if not hasattr(prop, "fset"):
-        pytest.skip("dbus_next dbus_property does not expose fset on this platform")
+        pytest.skip("dbus_fast dbus_property does not expose fset on this platform")
     await prop.fset(obj, value)
 
 

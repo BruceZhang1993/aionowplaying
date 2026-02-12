@@ -13,7 +13,7 @@ install_requires = \
 extras_require = \
 {':sys_platform == "darwin"': ['pyobjc-framework-MediaPlayer',
                                'pyobjc-framework-Cocoa'],
- ':sys_platform == "linux"': ['dbus-next'],
+ ':sys_platform == "linux"': ['dbus-fast'],
  ':sys_platform == "win32"': ['winsdk']}
 
 setup_kwargs = {
@@ -35,4 +35,3 @@ setup_kwargs = {
 
 
 setup(**setup_kwargs)
-

@@ -1,8 +1,8 @@
 from typing import Any
 
-from dbus_next import PropertyAccess, Variant
-from dbus_next.aio import MessageBus
-from dbus_next.service import ServiceInterface, dbus_property, method, signal
+from dbus_fast import PropertyAccess, Variant
+from dbus_fast.aio import MessageBus
+from dbus_fast.service import ServiceInterface, dbus_property, method, signal
 
 from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProperties, PlaybackProperties, \
     PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties
