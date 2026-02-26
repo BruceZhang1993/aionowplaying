@@ -14,8 +14,13 @@ poetry add aionowplaying
 ```
 
 ## Documentation
-_TODO_
-see tests for now.
+API docs are published on Read the Docs:
+https://aionowplaying.readthedocs.io/
+
+Build locally:
+```shell
+sphinx-build -b html docs docs/_build/html
+```
 
 ## Development
 ```shell
