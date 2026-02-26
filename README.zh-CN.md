@@ -7,27 +7,27 @@
 [![PyPI version](https://img.shields.io/pypi/v/aionowplaying.svg)](https://pypi.org/project/aionowplaying/)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 
-A cross-platform Now Playing client for Linux (MPRIS2), macOS, and Windows.
+一个支持 Linux（MPRIS2）、macOS、Windows 的跨平台 Now Playing 客户端库。
 
-## Features
+## 功能特性
 
-- Unified Python interface for Now Playing integration across platforms.
-- Platform-specific backends selected automatically at runtime.
-- Typed playback/property models powered by Pydantic.
+- 统一的 Python 接口，便于在不同系统上集成 Now Playing 功能。
+- 运行时自动选择平台后端实现。
+- 基于 Pydantic 的类型化播放属性模型。
 
-## Installation
+## 安装
 
 ```shell
 pip install aionowplaying
 ```
 
-If you use `uv`:
+如果你使用 `uv`：
 
 ```shell
 uv add aionowplaying
 ```
 
-## Quick Start
+## 快速开始
 
 ```python
 import aionowplaying as aionp
@@ -40,26 +40,26 @@ backend.set_playback_property(
 )
 ```
 
-## Documentation
+## 文档
 
-- Interface/API documentation: https://aionowplaying.readthedocs.io/en/latest/
-- API reference page: https://aionowplaying.readthedocs.io/en/latest/api.html
+- 接口/API 文档：https://aionowplaying.readthedocs.io/en/latest/
+- API 参考页：https://aionowplaying.readthedocs.io/en/latest/api.html
 
-Build docs locally:
+本地构建文档：
 
 ```shell
 sphinx-build -b html docs docs/_build/html
 ```
 
-## Development
+## 开发
 
-Install dependencies and run tests:
+安装开发依赖并运行测试：
 
 ```shell
 uv sync --dev
 uv run pytest -v
 ```
 
-## License
+## 许可证
 
-This project is licensed under GPL-3.0-only. See [LICENSE.txt](LICENSE.txt).
+本项目采用 GPL-3.0-only 许可证，详见 [LICENSE.txt](LICENSE.txt)。
