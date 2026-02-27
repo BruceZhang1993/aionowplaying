@@ -63,3 +63,46 @@ uv run pytest -v
 ## License
 
 This project is licensed under GPL-3.0-only. See [LICENSE.txt](LICENSE.txt).
+
+## Contributing
+
+Contributions are welcome! Please follow the guidelines below.
+
+### Reporting Issues
+
+If you find a bug or have a feature request:
+
+1. Search existing issues to avoid duplicates
+2. Use the appropriate issue template:
+   - **Bug Report**: For reporting bugs and errors
+   - **Feature Request**: For suggesting new features
+   - **Question/Other**: For other inquiries
+3. Provide as much detail as possible:
+   - For bugs: steps to reproduce, expected vs actual behavior, environment details
+   - For features: use case and why it would be helpful
+
+### Pull Requests
+
+1. Fork the repository and create a feature branch from `main`
+2. Run tests locally: `uv run pytest -v`
+3. Ensure code follows project conventions
+4. Write clear commit messages
+5. Push your changes and create a pull request
+6. Fill out the PR template with all relevant details
+
+### Development Setup
+
+```shell
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/aionowplaying.git
+cd aionowplaying
+
+# Install dependencies
+uv sync --dev
+
+# Run tests
+uv run pytest -v
+
+# Run linting (if available)
+uv run ruff check .
+```
