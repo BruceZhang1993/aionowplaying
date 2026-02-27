@@ -115,6 +115,16 @@ def test_set_playback_properties_metadata_and_status():
     )
     assert playback_state == macos.MPMusicPlaybackStatePlaying
 
+    it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Stopped)
+    info = it.info_center.nowPlayingInfo()
+    assert info[macos.MPNowPlayingInfoPropertyPlaybackRate] == 0
+    playback_state = (
+        it.info_center.playbackState()
+        if callable(it.info_center.playbackState)
+        else it.info_center.playbackState
+    )
+    assert playback_state == macos.MPMusicPlaybackStateStopped
+
 
 def test_get_playback_property():
     macos = macos_module
@@ -210,6 +220,10 @@ def test_load_artwork_paths(tmp_path):
     if macos.MPMediaItemArtwork is not None:
         assert artwork is not None
 
+    file_url_artwork = it._load_artwork(img_path.resolve().as_uri())
+    if macos.MPMediaItemArtwork is not None:
+        assert file_url_artwork is not None
+
 
 def test_set_command_enabled_fallback():
     macos = macos_module
@@ -288,3 +302,83 @@ async def test_remote_command_handlers_and_enabling():
         assert any(call[0] == "loop" for call in it.calls)
     if macos.MPShuffleTypeItems is not None:
         assert ("shuffle", True) in it.calls
+
+
+@pytest.mark.asyncio
+async def test_remote_handlers_ignore_when_capability_disabled():
+    macos = macos_module
+    _ensure_app_ready()
+
+    class TestInterface(macos.MacOSInterface):
+        def __init__(self, name: str):
+            super().__init__(name)
+            self.calls = []
+
+        async def on_set_position(self, _track_id, position):
+            self.calls.append(("set_position", position))
+
+        async def on_seek(self, position):
+            self.calls.append(("seek", position))
+
+        async def on_loop_status(self, status):
+            self.calls.append(("loop", status))
+
+        async def on_shuffle(self, shuffle):
+            self.calls.append(("shuffle", shuffle))
+
+    it = TestInterface("test")
+
+    it.set_playback_property(PlaybackPropertyName.CanSeek, False)
+    await it._handle_change_playback_position(SimpleNamespace(positionTime=9.0))
+    assert it.calls == []
+
+    if macos.MPRepeatTypeOne is not None:
+        it.set_playback_property(PlaybackPropertyName.CanControl, False)
+        await it._handle_change_repeat_mode(SimpleNamespace(repeatType=macos.MPRepeatTypeOne))
+        assert it.calls == []
+
+    if macos.MPShuffleTypeItems is not None:
+        it.set_playback_property(PlaybackPropertyName.CanControl, False)
+        await it._handle_change_shuffle_mode(SimpleNamespace(shuffleType=macos.MPShuffleTypeItems))
+        assert it.calls == []
+
+
+@pytest.mark.asyncio
+async def test_repeat_and_shuffle_handler_variants():
+    macos = macos_module
+    _ensure_app_ready()
+
+    class TestInterface(macos.MacOSInterface):
+        def __init__(self, name: str):
+            super().__init__(name)
+            self.calls = []
+
+        async def on_loop_status(self, status):
+            self.calls.append(("loop", status))
+
+        async def on_shuffle(self, shuffle):
+            self.calls.append(("shuffle", shuffle))
+
+    it = TestInterface("test")
+    it.set_playback_property(PlaybackPropertyName.CanControl, True)
+
+    if macos.MPRepeatTypeAll is not None:
+        await it._handle_change_repeat_mode(SimpleNamespace(repeatType=macos.MPRepeatTypeAll))
+    if macos.MPRepeatTypeOff is not None:
+        await it._handle_change_repeat_mode(SimpleNamespace(repeatType=macos.MPRepeatTypeOff))
+    if macos.MPShuffleTypeOff is not None:
+        await it._handle_change_shuffle_mode(SimpleNamespace(shuffleType=macos.MPShuffleTypeOff))
+
+    if macos.MPRepeatTypeAll is not None:
+        assert ("loop", LoopStatus.Playlist) in it.calls
+    if macos.MPRepeatTypeOff is not None:
+        assert ("loop", LoopStatus.None_) in it.calls
+    if macos.MPShuffleTypeOff is not None:
+        assert ("shuffle", False) in it.calls
+
+
+def test_set_command_enabled_with_none_command():
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+    it._set_command_enabled(None, True)

@@ -68,6 +68,10 @@ def test_set_playback_properties_and_metadata():
 
     it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
     assert it._playback_properties.PlaybackStatus == PlaybackStatus.Playing
+    it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Paused)
+    assert it._playback_properties.PlaybackStatus == PlaybackStatus.Paused
+    it.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Stopped)
+    assert it._playback_properties.PlaybackStatus == PlaybackStatus.Stopped
 
     it.set_playback_property(PlaybackPropertyName.Shuffle, True)
     assert it._controls.shuffle_enabled is True
@@ -77,6 +81,10 @@ def test_set_playback_properties_and_metadata():
 
     it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.Track)
     assert it._playback_properties.LoopStatus == LoopStatus.Track
+    it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.Playlist)
+    assert it._playback_properties.LoopStatus == LoopStatus.Playlist
+    it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.None_)
+    assert it._playback_properties.LoopStatus == LoopStatus.None_
 
     it.set_playback_property(PlaybackPropertyName.Position, 5000000)
     assert it._timeline.position is not None
@@ -173,6 +181,23 @@ def test_event_handlers_and_buttons():
     assert "seek" in it.called
     assert "set_position" in it.called
     assert "loop" in it.called
+
+
+def test_property_changed_non_sound_level_ignored():
+    windows = windows_module
+    _ensure_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.called = []
+
+        def on_volume(self, _):
+            self.called.append("volume")
+
+    it = TestInterface()
+    it.property_changed(None, SimpleNamespace(property=object()))
+    assert it.called == []
 
 
 def test_windows_property_and_tracklist_roundtrip():
@@ -319,6 +344,25 @@ def test_run_task_from_non_main_thread():
     loop.call_soon_threadsafe(loop.stop)
     loop_thread.join(timeout=1)
     assert it.done is True
+
+
+def test_stop_sets_running_flag():
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+    assert it._running is True
+    asyncio.get_event_loop().run_until_complete(it.stop())
+    assert it._running is False
+
+
+def test_playback_position_updates_without_duration():
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    it.set_playback_property(PlaybackPropertyName.Duration, 0)
+    it.set_playback_property(PlaybackPropertyName.Position, 2_000_000)
+    assert it._playback_properties.Position == 2_000_000
 
 
 def test_update_metadata_media_types():
