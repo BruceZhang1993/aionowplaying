@@ -30,14 +30,16 @@ uv add aionowplaying
 ## 快速开始
 
 ```python
+import asyncio
 import aionowplaying as aionp
 
-backend = aionp.NowPlayingInterface("My Player")
+backend = aionp.select_interface()("My Player")
 backend.set_property(aionp.PropertyName.Identity, "My Player")
 backend.set_playback_property(
     aionp.PlaybackPropertyName.PlaybackStatus,
     aionp.PlaybackStatus.Playing,
 )
+asyncio.run(backend.start())
 ```
 
 ## 文档
