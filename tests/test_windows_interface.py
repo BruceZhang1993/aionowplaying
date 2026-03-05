@@ -385,10 +385,10 @@ def test_update_metadata_media_types():
     assert it._updater.type == windows.MediaPlaybackType.VIDEO
 
 
-def test_async_callback_paths():
+@pytest.mark.asyncio
+async def test_async_callback_paths():
     """Test async callback paths in event handlers."""
     windows = windows_module
-    _ensure_event_loop()
 
     class AsyncInterface(windows.WindowsInterface):
         def __init__(self):
@@ -463,6 +463,9 @@ def test_async_callback_paths():
         None,
         SimpleNamespace(requested_auto_repeat_mode=windows.MediaPlaybackAutoRepeatMode.LIST),
     )
+
+    # Give async tasks a chance to complete
+    await asyncio.sleep(0.01)
 
     assert "play" in it.calls
     assert "pause" in it.calls
@@ -567,7 +570,8 @@ def test_metadata_with_album_artist():
     it.set_playback_property(PlaybackPropertyName.Metadata, meta)
     assert it._updater.music_properties.title == "Song"
     if hasattr(it._updater.music_properties, "album_artist"):
-        assert it._updater.music_properties.album_artist == "Album Artist 1, Album Artist 2"
+        # Note: Windows uses ',' without space for joining
+        assert it._updater.music_properties.album_artist == "Album Artist 1,Album Artist 2"
 
 
 def test_metadata_without_cover():
