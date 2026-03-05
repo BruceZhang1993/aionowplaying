@@ -383,3 +383,222 @@ def test_update_metadata_media_types():
     meta.media_type = windows.MediaType.Video
     it.set_playback_property(PlaybackPropertyName.Metadata, meta)
     assert it._updater.type == windows.MediaPlaybackType.VIDEO
+
+
+def test_async_callback_paths():
+    """Test async callback paths in event handlers."""
+    windows = windows_module
+    _ensure_event_loop()
+
+    class AsyncInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.calls = []
+
+        async def on_play(self):
+            self.calls.append("play")
+
+        async def on_pause(self):
+            self.calls.append("pause")
+
+        async def on_next(self):
+            self.calls.append("next")
+
+        async def on_previous(self):
+            self.calls.append("previous")
+
+        async def on_stop(self):
+            self.calls.append("stop")
+
+        async def on_seek(self, pos):
+            self.calls.append(("seek", pos))
+
+        async def on_set_position(self, track_id, pos):
+            self.calls.append(("set_position", track_id, pos))
+
+        async def on_shuffle(self, enabled):
+            self.calls.append(("shuffle", enabled))
+
+        async def on_rate(self, rate):
+            self.calls.append(("rate", rate))
+
+        async def on_volume(self, level):
+            self.calls.append(("volume", level))
+
+        async def on_loop_status(self, status):
+            self.calls.append(("loop", status))
+
+    it = AsyncInterface()
+    it.set_playback_property(PlaybackPropertyName.CanPlay, True)
+    it.set_playback_property(PlaybackPropertyName.CanPause, True)
+    it.set_playback_property(PlaybackPropertyName.CanGoNext, True)
+    it.set_playback_property(PlaybackPropertyName.CanGoPrevious, True)
+    it.set_playback_property(PlaybackPropertyName.CanControl, True)
+    it.set_playback_property(PlaybackPropertyName.CanSeek, True)
+
+    # Test async button handlers
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PLAY))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PAUSE))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.NEXT))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.PREVIOUS))
+    it.button_pressed(None, SimpleNamespace(button=windows.SystemMediaTransportControlsButton.STOP))
+
+    # Test async shuffle handler
+    it.shuffle_change_requested(None, SimpleNamespace(requested_shuffle_enabled=True))
+
+    # Test async rate handler
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=1.5))
+
+    # Test async volume handler
+    it.property_changed(None, SimpleNamespace(property=windows.SystemMediaTransportControlsProperty.SOUND_LEVEL))
+
+    # Test async position handler
+    it.playback_position_change_requested(
+        None,
+        SimpleNamespace(requested_playback_position=timedelta(seconds=5, microseconds=100)),
+    )
+
+    # Test async loop status handler
+    it.auto_repeat_mode_change_requested(
+        None,
+        SimpleNamespace(requested_auto_repeat_mode=windows.MediaPlaybackAutoRepeatMode.LIST),
+    )
+
+    assert "play" in it.calls
+    assert "pause" in it.calls
+    assert "next" in it.calls
+    assert "previous" in it.calls
+    assert "stop" in it.calls
+    assert ("shuffle", True) in it.calls
+    assert ("rate", 1.5) in it.calls
+    assert ("volume", it._controls.sound_level) in it.calls
+    assert ("loop", LoopStatus.Playlist) in it.calls
+
+
+def test_playback_rate_boundary_conditions():
+    """Test all boundary conditions in playback_rate_change_requested."""
+    windows = windows_module
+    _ensure_event_loop()
+
+    class TestInterface(windows.WindowsInterface):
+        def __init__(self):
+            super().__init__("test")
+            self.rate_calls = []
+
+        def on_rate(self, rate):
+            self.rate_calls.append(rate)
+
+    it = TestInterface()
+
+    # Test 1: min_rate == max_rate (should allow any rate)
+    it.set_playback_property(PlaybackPropertyName.MinimumRate, 1.0)
+    it.set_playback_property(PlaybackPropertyName.MaximumRate, 1.0)
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=2.0))
+    assert 2.0 in it.rate_calls
+
+    # Test 2: min_rate > max_rate (invalid, should allow any rate)
+    it.rate_calls = []
+    it.set_playback_property(PlaybackPropertyName.MinimumRate, 2.0)
+    it.set_playback_property(PlaybackPropertyName.MaximumRate, 1.0)
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=1.5))
+    assert 1.5 in it.rate_calls
+
+    # Test 3: rate < min_rate (should be rejected)
+    it.rate_calls = []
+    it.set_playback_property(PlaybackPropertyName.MinimumRate, 0.5)
+    it.set_playback_property(PlaybackPropertyName.MaximumRate, 2.0)
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=0.25))
+    assert 0.25 not in it.rate_calls
+
+    # Test 4: rate > max_rate (should be rejected)
+    it.rate_calls = []
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=3.0))
+    assert 3.0 not in it.rate_calls
+
+    # Test 5: rate within range (should be accepted)
+    it.rate_calls = []
+    it.playback_rate_change_requested(None, SimpleNamespace(requested_playback_rate=1.0))
+    assert 1.0 in it.rate_calls
+
+
+def test_can_seek_with_duration():
+    """Test CanSeek=True with duration set updates timeline correctly."""
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    # Set duration first
+    it.set_playback_property(PlaybackPropertyName.Duration, 10_000_000)
+
+    # Then set CanSeek=True - should update timeline with max_seek_time
+    it.set_playback_property(PlaybackPropertyName.CanSeek, True)
+    assert it._timeline.max_seek_time is not None
+
+
+def test_position_with_duration():
+    """Test Position setter with duration set updates timeline correctly."""
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    # Set duration first
+    it.set_playback_property(PlaybackPropertyName.Duration, 10_000_000)
+
+    # Then set position - should update timeline with max_seek_time
+    it.set_playback_property(PlaybackPropertyName.Position, 5_000_000)
+    assert it._timeline.position is not None
+    assert it._timeline.max_seek_time is not None
+
+
+def test_metadata_with_album_artist():
+    """Test metadata with albumArtist field."""
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    meta = PlaybackProperties.MetadataBean()
+    meta.title = "Song"
+    meta.artist = ["Artist"]
+    meta.album = "Album"
+    meta.albumArtist = ["Album Artist 1", "Album Artist 2"]
+    meta.id_ = "id1"
+    meta.duration = 120_000_000
+
+    it.set_playback_property(PlaybackPropertyName.Metadata, meta)
+    assert it._updater.music_properties.title == "Song"
+    if hasattr(it._updater.music_properties, "album_artist"):
+        assert it._updater.music_properties.album_artist == "Album Artist 1, Album Artist 2"
+
+
+def test_metadata_without_cover():
+    """Test metadata without cover (null cover)."""
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    meta = PlaybackProperties.MetadataBean()
+    meta.title = "Song"
+    meta.artist = ["Artist"]
+    meta.id_ = "id1"
+    meta.duration = 120_000_000
+    meta.cover = None  # No cover
+
+    it.set_playback_property(PlaybackPropertyName.Metadata, meta)
+    assert it._updater.thumbnail is None
+
+
+def test_metadata_with_empty_cover():
+    """Test metadata with empty cover string."""
+    windows = windows_module
+    _ensure_event_loop()
+    it = windows.WindowsInterface("test")
+
+    meta = PlaybackProperties.MetadataBean()
+    meta.title = "Song"
+    meta.artist = ["Artist"]
+    meta.id_ = "id1"
+    meta.duration = 120_000_000
+    meta.cover = ""  # Empty cover
+
+    it.set_playback_property(PlaybackPropertyName.Metadata, meta)
+    assert it._updater.thumbnail is None

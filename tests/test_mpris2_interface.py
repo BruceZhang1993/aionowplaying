@@ -334,3 +334,25 @@ def test_tracklist_dbus_properties():
     tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
     assert _get_dbus_prop(tracklist, "can_edit_tracks") is False
     assert _get_dbus_prop(tracklist, "tracks") == []
+
+
+@pytest.mark.asyncio
+async def test_fullscreen_setter_when_can_set_fullscreen_false():
+    """Test that fullscreen setter does nothing when CanSetFullscreen is False."""
+    called = {"fullscreen": 0}
+
+    class It:
+        async def on_fullscreen(self, _):
+            called["fullscreen"] += 1
+
+    service = mpris2.MprisServiceInterface("org.mpris.MediaPlayer2", it=It())
+    # CanSetFullscreen is False by default
+    assert service._properties.CanSetFullscreen is False
+
+    # Attempt to set fullscreen should be ignored
+    await _set_dbus_prop(service, "fullscreen", True)
+
+    # Callback should not be called
+    assert called["fullscreen"] == 0
+    # Property should remain False
+    assert service._properties.Fullscreen is False

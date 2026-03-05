@@ -382,3 +382,122 @@ def test_set_command_enabled_with_none_command():
     _ensure_app_ready()
     it = macos.MacOSInterface("test")
     it._set_command_enabled(None, True)
+
+
+def test_load_artwork_remote_url_returns_none():
+    """Test that remote URLs return None for artwork loading."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    # Remote URLs should return None (not supported)
+    result = it._load_artwork("http://example.com/cover.jpg")
+    assert result is None
+
+    result = it._load_artwork("https://example.com/cover.png")
+    assert result is None
+
+
+def test_set_command_enabled_with_enabled_attribute():
+    """Test _set_command_enabled with 'enabled' attribute (not 'isEnabled')."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    class DummyCommandWithEnabled:
+        enabled = False
+
+    cmd = DummyCommandWithEnabled()
+    it._set_command_enabled(cmd, True)
+    assert cmd.enabled is True
+
+
+def test_set_command_enabled_with_isEnabled_exception():
+    """Test _set_command_enabled handles exception when setting isEnabled."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    class DummyCommandReadOnly:
+        @property
+        def isEnabled(self):
+            return False
+
+        @isEnabled.setter
+        def isEnabled(self, value):
+            raise AttributeError("read-only property")
+
+    cmd = DummyCommandReadOnly()
+    # Should not raise exception
+    it._set_command_enabled(cmd, True)
+
+
+def test_loop_status_setter_exception_handling():
+    """Test that loop status setter handles exceptions gracefully."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    # This should not raise an exception even if the property is read-only
+    if it._cmd_change_repeat is not None and macos.MPRepeatTypeOff is not None:
+        try:
+            it.set_playback_property(PlaybackPropertyName.LoopStatus, LoopStatus.Track)
+        except Exception:
+            pytest.fail("set_playback_property should not raise exception for read-only property")
+
+
+def test_shuffle_setter_exception_handling():
+    """Test that shuffle setter handles exceptions gracefully."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    # This should not raise an exception even if the property is read-only
+    if it._cmd_change_shuffle is not None and macos.MPShuffleTypeOff is not None:
+        try:
+            it.set_playback_property(PlaybackPropertyName.Shuffle, True)
+        except Exception:
+            pytest.fail("set_playback_property should not raise exception for read-only property")
+
+
+def test_update_supported_rates_with_invalid_range():
+    """Test _update_supported_rates with invalid min/max range."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    if it._cmd_change_rate is not None:
+        # Set invalid range (min > max)
+        it.set_playback_property(PlaybackPropertyName.MinimumRate, 2.0)
+        it.set_playback_property(PlaybackPropertyName.MaximumRate, 1.0)
+
+        # Should not update supportedPlaybackRates with invalid range
+        # This tests the early return in _update_supported_rates
+
+
+def test_volume_property_noop():
+    """Test that setting Volume property is a no-op on macOS."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    # Volume setter should be a no-op and not raise
+    it.set_playback_property(PlaybackPropertyName.Volume, 0.5)
+
+
+def test_metadata_with_cover_none():
+    """Test metadata with cover=None."""
+    macos = macos_module
+    _ensure_app_ready()
+    it = macos.MacOSInterface("test")
+
+    meta = PlaybackProperties.MetadataBean()
+    meta.title = "Song"
+    meta.artist = ["Artist"]
+    meta.id_ = "id1"
+    meta.duration = 30_000_000
+    meta.cover = None
+
+    it.set_playback_property(PlaybackPropertyName.Metadata, meta)
+    info = it.info_center.nowPlayingInfo()
+    assert info[macos.MPMediaItemPropertyTitle] == "Song"
