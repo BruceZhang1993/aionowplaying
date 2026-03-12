@@ -103,9 +103,10 @@ player.position = timedelta(seconds=45)
 | `on_next` | `CanGoNext=True` |
 | `on_previous` | `CanGoPrevious=True` |
 | `on_seek` | `CanSeek=True` |
-| `on_stop` | `CanControl=True` |
 
-**关于 `on_stop` 与 `CanControl`**：MPRIS 规范中 `CanControl` 是总开关。当注册 `on_stop` 时，设置 `CanControl=True`，这是当前实现的简化处理。后续可考虑增加 `on_quit` 等回调进一步细化。
+**关于 `CanControl`**：根据 MPRIS 规范，`CanControl` 是全局控制开关。当注册了**任意控制回调**时，自动设置 `CanControl=True`。
+
+**关于 `on_stop`**：MPRIS 没有独立的 `CanStop` 能力。注册 `on_stop` 回调时，设置 `CanControl=True`（因为 stop 是控制操作），同时记录回调供内部使用。
 
 ### 回调支持范围
 
@@ -334,9 +335,22 @@ class NowPlaying:
             self._apply_metadata(metadata)
 
         # 注册回调并设置能力
+        control_callbacks = ['on_play', 'on_pause', 'on_next', 'on_previous',
+                             'on_seek', 'on_stop', 'on_volume', 'on_shuffle', 'on_loop']
+        has_control = any(self._callbacks.get(cb) for cb in control_callbacks)
+        if has_control:
+            self._interface.set_playback_property(
+                PlaybackPropertyName.CanControl, True
+            )
+
+        # 设置具体能力
         if self._callbacks.get('on_play'):
             self._interface.set_playback_property(
                 PlaybackPropertyName.CanPlay, True
+            )
+        if self._callbacks.get('on_pause'):
+            self._interface.set_playback_property(
+                PlaybackPropertyName.CanPause, True
             )
         # ... 其他回调类似
 
