@@ -31,15 +31,47 @@ uv add aionowplaying
 
 ```python
 import asyncio
-import aionowplaying as aionp
+from datetime import timedelta
+from aionowplaying import NowPlaying
 
-backend = aionp.select_interface()("My Player")
-backend.set_property(aionp.PropertyName.Identity, "My Player")
-backend.set_playback_property(
-    aionp.PlaybackPropertyName.PlaybackStatus,
-    aionp.PlaybackStatus.Playing,
+# Create player with metadata and callbacks
+player = NowPlaying(
+    "My Player",
+    metadata={
+        "title": "Song Name",
+        "artist": ["Artist"],
+        "album": "Album",
+        "duration": timedelta(minutes=3, seconds=30),
+    },
+    on_play=lambda: my_player.play(),
+    on_pause=lambda: my_player.pause(),
+    on_next=lambda: my_player.next(),
 )
-asyncio.run(backend.start())
+
+# Update metadata during playback
+player.title = "New Song"
+player.position = timedelta(seconds=60)
+player.set_playing()
+
+# Start the backend
+asyncio.run(player.start())
+```
+
+### Advanced Usage
+
+For fine-grained control, inherit from `BaseInterface`:
+
+```python
+from aionowplaying import BaseInterface
+
+class MyPlayer(BaseInterface):
+    async def on_play(self):
+        # Custom implementation
+        pass
+
+    async def on_pause(self):
+        # Custom implementation
+        pass
 ```
 
 ## Documentation
