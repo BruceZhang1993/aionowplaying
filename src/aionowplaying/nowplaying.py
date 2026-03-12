@@ -262,3 +262,13 @@ class NowPlaying:
     def set_stopped(self) -> None:
         """Set playback status to Stopped."""
         self._interface.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Stopped)
+
+    # Lifecycle methods
+
+    async def start(self) -> None:
+        """Start the Now Playing backend."""
+        await self._interface.start()
+
+    async def stop(self) -> None:
+        """Stop the Now Playing backend."""
+        await self._interface.stop()
