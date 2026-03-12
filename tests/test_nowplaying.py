@@ -149,3 +149,68 @@ def test_microseconds_to_timedelta():
 
     result = player._microseconds_to_timedelta(210_000_000)
     assert result == timedelta(minutes=3, seconds=30)
+
+
+def test_title_property():
+    """Test title property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.title = "Test Song"
+    assert player.title == "Test Song"
+
+
+def test_artist_property():
+    """Test artist property getter/setter."""
+    player = NowPlaying("Test Player")
+
+    # Test with list
+    player.artist = ["Artist 1", "Artist 2"]
+    assert player.artist == ["Artist 1", "Artist 2"]
+
+    # Test with string (should convert to list)
+    player.artist = "Single Artist"
+    assert player.artist == ["Single Artist"]
+
+
+def test_album_property():
+    """Test album property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.album = "Test Album"
+    assert player.album == "Test Album"
+
+
+def test_album_artist_property():
+    """Test album_artist property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.album_artist = ["Album Artist 1"]
+    assert player.album_artist == ["Album Artist 1"]
+
+    player.album_artist = "Single Album Artist"
+    assert player.album_artist == ["Single Album Artist"]
+
+
+def test_cover_property():
+    """Test cover property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.cover = "file:///path/to/cover.jpg"
+    assert player.cover == "file:///path/to/cover.jpg"
+
+
+def test_url_property():
+    """Test url property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.url = "file:///path/to/song.mp3"
+    assert player.url == "file:///path/to/song.mp3"
+
+
+def test_track_number_property():
+    """Test track_number property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.track_number = 5
+    assert player.track_number == 5
+
+
+def test_duration_property():
+    """Test duration property with timedelta."""
+    player = NowPlaying("Test Player")
+    player.duration = timedelta(minutes=3, seconds=30)
+    assert player.duration == timedelta(minutes=3, seconds=30)

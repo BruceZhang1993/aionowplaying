@@ -102,3 +102,76 @@ class NowPlaying:
     def _microseconds_to_timedelta(us: int) -> timedelta:
         """Convert microseconds to timedelta."""
         return timedelta(microseconds=us)
+
+    # Metadata properties
+
+    @property
+    def title(self) -> str:
+        return self._interface._playback_properties.Metadata.title
+
+    @title.setter
+    def title(self, value: str):
+        self._interface._playback_properties.Metadata.title = value
+
+    @property
+    def artist(self) -> list[str]:
+        return self._interface._playback_properties.Metadata.artist
+
+    @artist.setter
+    def artist(self, value: list[str] | str):
+        if isinstance(value, str):
+            value = [value]
+        self._interface._playback_properties.Metadata.artist = value
+
+    @property
+    def album(self) -> str:
+        return self._interface._playback_properties.Metadata.album
+
+    @album.setter
+    def album(self, value: str):
+        self._interface._playback_properties.Metadata.album = value
+
+    @property
+    def album_artist(self) -> list[str]:
+        return self._interface._playback_properties.Metadata.albumArtist
+
+    @album_artist.setter
+    def album_artist(self, value: list[str] | str):
+        if isinstance(value, str):
+            value = [value]
+        self._interface._playback_properties.Metadata.albumArtist = value
+
+    @property
+    def cover(self) -> str:
+        return self._interface._playback_properties.Metadata.cover
+
+    @cover.setter
+    def cover(self, value: str):
+        self._interface._playback_properties.Metadata.cover = value
+
+    @property
+    def url(self) -> str:
+        return self._interface._playback_properties.Metadata.url
+
+    @url.setter
+    def url(self, value: str):
+        self._interface._playback_properties.Metadata.url = value
+
+    @property
+    def track_number(self) -> int:
+        return self._interface._playback_properties.Metadata.trackNumber
+
+    @track_number.setter
+    def track_number(self, value: int):
+        self._interface._playback_properties.Metadata.trackNumber = value
+
+    @property
+    def duration(self) -> timedelta | None:
+        us = self._interface._playback_properties.Metadata.duration
+        if us == 0:
+            return None
+        return self._microseconds_to_timedelta(us)
+
+    @duration.setter
+    def duration(self, value: timedelta):
+        self._interface._playback_properties.Metadata.duration = self._timedelta_to_microseconds(value)
