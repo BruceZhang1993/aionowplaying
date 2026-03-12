@@ -4,6 +4,7 @@ import aionowplaying as aionp
 from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus
 from datetime import timedelta
 import asyncio
+import warnings
 
 
 class DummyInterface(aionp.BaseInterface):
@@ -319,3 +320,28 @@ async def test_callback_execution():
 
     assert 'play' in call_log
     assert 'pause' in call_log
+
+
+def test_select_interface_deprecation():
+    """Test that select_interface shows deprecation warning."""
+    from aionowplaying.interface import select_interface
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        select_interface()
+
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "deprecated" in str(w[0].message).lower()
+
+
+def test_nowplaying_interface_deprecation():
+    """Test that NowPlayingInterface shows deprecation warning."""
+    import aionowplaying
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        _ = aionowplaying.NowPlayingInterface
+
+        assert len(w) >= 1
+        assert any(issubclass(x.category, DeprecationWarning) for x in w)

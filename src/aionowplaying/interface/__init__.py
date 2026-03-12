@@ -1,5 +1,6 @@
 import importlib
 import sys
+import warnings
 from typing import Type
 
 from aionowplaying.interface.base import BaseInterface
@@ -21,5 +22,15 @@ def _select_interface_impl(system: str = None) -> Type[BaseInterface]:
 
 
 def select_interface(system: str = None) -> Type[BaseInterface]:
-    """Select the appropriate interface for the current platform."""
+    """
+    Select the appropriate interface for the current platform.
+
+    .. deprecated:: 0.12.0
+        Use :class:`aionowplaying.NowPlaying` instead.
+    """
+    warnings.warn(
+        "select_interface() is deprecated. Use aionowplaying.NowPlaying instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return _select_interface_impl(system)
