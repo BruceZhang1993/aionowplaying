@@ -9,6 +9,14 @@ Top-level package
    :undoc-members:
    :show-inheritance:
 
+NowPlaying Class
+-----------------
+
+.. automodule:: aionowplaying.nowplaying
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Interface selector
 ------------------
 

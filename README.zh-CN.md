@@ -14,6 +14,7 @@
 - 统一的 Python 接口，便于在不同系统上集成 Now Playing 功能。
 - 运行时自动选择平台后端实现。
 - 基于 Pydantic 的类型化播放属性模型。
+- 简化的 Fluent API，支持 `timedelta` 时间类型。
 
 ## 安装
 
@@ -31,15 +32,47 @@ uv add aionowplaying
 
 ```python
 import asyncio
-import aionowplaying as aionp
+from datetime import timedelta
+from aionowplaying import NowPlaying
 
-backend = aionp.select_interface()("My Player")
-backend.set_property(aionp.PropertyName.Identity, "My Player")
-backend.set_playback_property(
-    aionp.PlaybackPropertyName.PlaybackStatus,
-    aionp.PlaybackStatus.Playing,
+# 创建播放器并设置元数据和回调
+player = NowPlaying(
+    "My Player",
+    metadata={
+        "title": "歌曲名称",
+        "artist": ["艺术家"],
+        "album": "专辑",
+        "duration": timedelta(minutes=3, seconds=30),
+    },
+    on_play=lambda: my_player.play(),
+    on_pause=lambda: my_player.pause(),
+    on_next=lambda: my_player.next(),
 )
-asyncio.run(backend.start())
+
+# 播放过程中更新元数据
+player.title = "新歌曲"
+player.position = timedelta(seconds=60)
+player.set_playing()
+
+# 启动后端
+asyncio.run(player.start())
+```
+
+### 高级用法
+
+如需更精细的控制，可以继承 `BaseInterface`：
+
+```python
+from aionowplaying import BaseInterface
+
+class MyPlayer(BaseInterface):
+    async def on_play(self):
+        # 自定义实现
+        pass
+
+    async def on_pause(self):
+        # 自定义实现
+        pass
 ```
 
 ## 文档
