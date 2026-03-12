@@ -45,7 +45,7 @@ player = NowPlaying(
     on_pause=lambda: my_player.pause(),
     on_next=lambda: my_player.next(),
     on_previous=lambda: my_player.prev(),
-    on_seek=lambda pos: my_player.seek(pos),  # pos 是 timedelta
+    on_seek=lambda offset: my_player.seek_relative(offset),  # offset 是 timedelta，相对偏移（正数前进，负数后退）
     on_stop=lambda: my_player.stop(),
 )
 ```
@@ -117,7 +117,7 @@ player.position = timedelta(seconds=45)
 | `on_pause` | `Callable[[], Any]` | 暂停 |
 | `on_next` | `Callable[[], Any]` | 下一曲 |
 | `on_previous` | `Callable[[], Any]` | 上一曲 |
-| `on_seek` | `Callable[[timedelta], Any]` | 跳转（接收 timedelta） |
+| `on_seek` | `Callable[[timedelta], Any]` | 相对跳转（正数前进，负数后退） |
 | `on_stop` | `Callable[[], Any]` | 停止 |
 | `on_volume` | `Callable[[float], Any]` | 音量变更（0.0-1.0） |
 | `on_shuffle` | `Callable[[bool], Any]` | 随机播放切换 |
@@ -374,9 +374,9 @@ class _CallbackWrapper(BaseInterface):
         self._nowplaying._run_callback('on_pause')
 
     async def on_seek(self, offset: int):
-        # offset 是微秒，转换为 timedelta
-        pos = self._nowplaying._microseconds_to_timedelta(offset)
-        self._nowplaying._run_callback('on_seek', pos)
+        # offset 是微秒（相对偏移），转换为 timedelta
+        delta = self._nowplaying._microseconds_to_timedelta(offset)
+        self._nowplaying._run_callback('on_seek', delta)
 
     # ... 其他回调类似
 ```
