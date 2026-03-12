@@ -2,6 +2,7 @@ import pytest
 
 import aionowplaying as aionp
 from aionowplaying import NowPlaying, PlaybackPropertyName
+from datetime import timedelta
 
 
 class DummyInterface(aionp.BaseInterface):
@@ -123,3 +124,28 @@ def test_capability_inference_from_callbacks():
 
     # Check that non-registered capabilities are False
     assert player._interface.get_playback_property(PlaybackPropertyName.CanGoPrevious) is False
+
+
+def test_timedelta_to_microseconds():
+    """Test timedelta to microseconds conversion."""
+    player = NowPlaying("Test Player")
+
+    # 1 second = 1,000,000 microseconds
+    assert player._timedelta_to_microseconds(timedelta(seconds=1)) == 1_000_000
+
+    # 1.5 seconds = 1,500,000 microseconds
+    assert player._timedelta_to_microseconds(timedelta(seconds=1.5)) == 1_500_000
+
+    # 3 minutes 30 seconds = 210,000,000 microseconds
+    assert player._timedelta_to_microseconds(timedelta(minutes=3, seconds=30)) == 210_000_000
+
+
+def test_microseconds_to_timedelta():
+    """Test microseconds to timedelta conversion."""
+    player = NowPlaying("Test Player")
+
+    result = player._microseconds_to_timedelta(1_000_000)
+    assert result == timedelta(seconds=1)
+
+    result = player._microseconds_to_timedelta(210_000_000)
+    assert result == timedelta(minutes=3, seconds=30)

@@ -92,3 +92,13 @@ class NowPlaying:
         """Apply metadata to the playback properties."""
         # Will be implemented in later tasks
         pass
+
+    @staticmethod
+    def _timedelta_to_microseconds(td: timedelta) -> int:
+        """Convert timedelta to microseconds."""
+        return int(td.total_seconds() * 1_000_000)
+
+    @staticmethod
+    def _microseconds_to_timedelta(us: int) -> timedelta:
+        """Convert microseconds to timedelta."""
+        return timedelta(microseconds=us)
