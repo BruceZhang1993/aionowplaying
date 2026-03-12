@@ -47,8 +47,12 @@ def test_init_raises_when_no_interface(monkeypatch):
     # Monkeypatch select_interface to return None
     monkeypatch.setattr(interface, "select_interface", lambda: None)
 
-    with pytest.raises(TypeError):
-        importlib.import_module("aionowplaying")
+    # With the new __getattr__ implementation, accessing NowPlayingInterface
+    # will call select_interface() and return None (with a deprecation warning)
+    import aionowplaying
+    with pytest.warns(DeprecationWarning):
+        result = aionowplaying.NowPlayingInterface
+    assert result is None
 
     # Clean up and restore normal behavior
     monkeypatch.undo()
