@@ -1,6 +1,7 @@
 import pytest
 
 import aionowplaying as aionp
+from aionowplaying import NowPlaying
 
 
 class DummyInterface(aionp.BaseInterface):
@@ -88,3 +89,18 @@ def test_update_playback_mode():
         aionp.PlaybackPropertyName.Shuffle,
         False,
     )
+
+
+def test_nowplaying_init_with_name():
+    """Test basic initialization with just a name."""
+    player = NowPlaying("Test Player")
+    assert player is not None
+    assert player.name == "Test Player"
+    assert player._identity == "Test Player"
+
+
+def test_nowplaying_init_with_identity():
+    """Test initialization with custom identity."""
+    player = NowPlaying("Test Player", identity="Custom Identity")
+    assert player.name == "Test Player"
+    assert player._identity == "Custom Identity"

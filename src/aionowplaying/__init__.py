@@ -1,12 +1,14 @@
-__all__ = ['select_interface', 'BaseInterface', 'PropertyName', 'LoopStatus', 'PlaybackPropertyName',
-           'PlaybackProperties', 'PlaybackStatus', 'NowPlayingInterface']
+__all__ = ['NowPlaying', 'select_interface', 'BaseInterface', 'PropertyName', 'LoopStatus',
+           'PlaybackPropertyName', 'PlaybackProperties', 'PlaybackStatus', 'NowPlayingInterface']
 
 from typing import Type
 
+from aionowplaying.nowplaying import NowPlaying
 from aionowplaying.interface import select_interface, BaseInterface
 from aionowplaying.interface.base import PropertyName, LoopStatus, PlaybackPropertyName, PlaybackProperties, \
     PlaybackStatus
 
+# Backward compatibility - will be deprecated in future version
 NowPlayingInterface: Type[BaseInterface] = select_interface()
 if NowPlayingInterface is None:
-    raise NotImplemented()
+    raise TypeError("No interface available for this platform")

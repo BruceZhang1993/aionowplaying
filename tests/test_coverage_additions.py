@@ -32,14 +32,27 @@ async def test_base_interface_noop_methods_are_callable():
 
 
 def test_init_raises_when_no_interface(monkeypatch):
+    # Clean up all aionowplaying modules first to ensure fresh state
+    for mod_name in list(sys.modules.keys()):
+        if mod_name.startswith("aionowplaying"):
+            sys.modules.pop(mod_name, None)
+
+    # Import the interface module fresh
     import aionowplaying.interface as interface
 
-    monkeypatch.setattr(interface, "select_interface", lambda: None)
+    # When importing a submodule, Python also imports the parent package.
+    # We need to pop it again so it gets re-imported after the monkeypatch.
     sys.modules.pop("aionowplaying", None)
+
+    # Monkeypatch select_interface to return None
+    monkeypatch.setattr(interface, "select_interface", lambda: None)
 
     with pytest.raises(TypeError):
         importlib.import_module("aionowplaying")
 
+    # Clean up and restore normal behavior
     monkeypatch.undo()
-    sys.modules.pop("aionowplaying", None)
+    for mod_name in list(sys.modules.keys()):
+        if mod_name.startswith("aionowplaying"):
+            sys.modules.pop(mod_name, None)
     importlib.import_module("aionowplaying")
