@@ -134,7 +134,8 @@ def test_get_playback_property():
     it.set_playback_property(PlaybackPropertyName.Position, 2_000_000)
     it.set_playback_property(PlaybackPropertyName.Rate, 1.5)
 
-    assert it.get_playback_property(PlaybackPropertyName.Position) == 2
+    # Position is stored and returned in microseconds
+    assert it.get_playback_property(PlaybackPropertyName.Position) == 2_000_000
     assert it.get_playback_property(PlaybackPropertyName.Rate) == 1.5
 
 

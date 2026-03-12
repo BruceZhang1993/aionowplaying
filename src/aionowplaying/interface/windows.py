@@ -27,7 +27,11 @@ def TimeSpan(x_microsec):
 class WindowsInterface(BaseInterface):
     def __init__(self, name):
         super(WindowsInterface, self).__init__(name)
-        self._loop = None
+        # Try to get the event loop if one exists, but don't fail if not
+        try:
+            self._loop = asyncio.get_event_loop()
+        except RuntimeError:
+            self._loop = None
         self._running = True
         self._playback_properties = PlaybackProperties()
         self._player = MediaPlayer()
