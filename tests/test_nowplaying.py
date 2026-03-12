@@ -1,7 +1,7 @@
 import pytest
 
 import aionowplaying as aionp
-from aionowplaying import NowPlaying, PlaybackPropertyName
+from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus
 from datetime import timedelta
 
 
@@ -214,3 +214,68 @@ def test_duration_property():
     player = NowPlaying("Test Player")
     player.duration = timedelta(minutes=3, seconds=30)
     assert player.duration == timedelta(minutes=3, seconds=30)
+
+
+# Playback state properties tests
+
+def test_position_property():
+    """Test position property with timedelta."""
+    player = NowPlaying("Test Player")
+    player.position = timedelta(seconds=60)
+    assert player.position == timedelta(seconds=60)
+
+
+def test_is_playing_property():
+    """Test is_playing property (read-only, use set_playing() to change)."""
+    player = NowPlaying("Test Player")
+    assert player.is_playing is False
+
+    player.set_playing()
+    assert player.is_playing is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing
+
+
+def test_is_paused_property():
+    """Test is_paused property (read-only, use set_paused() to change)."""
+    player = NowPlaying("Test Player")
+
+    player.set_paused()
+    assert player.is_paused is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Paused
+
+
+def test_is_stopped_property():
+    """Test is_stopped property (read-only, use set_stopped() to change)."""
+    player = NowPlaying("Test Player")
+
+    player.set_stopped()
+    assert player.is_stopped is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Stopped
+
+
+def test_volume_property():
+    """Test volume property."""
+    player = NowPlaying("Test Player")
+    player.volume = 0.5
+    assert player.volume == 0.5
+
+
+def test_shuffle_property():
+    """Test shuffle property."""
+    player = NowPlaying("Test Player")
+    player.shuffle = True
+    assert player.shuffle is True
+
+
+def test_loop_status_property():
+    """Test loop_status property."""
+    player = NowPlaying("Test Player")
+    player.loop_status = LoopStatus.Track
+    assert player.loop_status == LoopStatus.Track
+
+
+def test_rate_property():
+    """Test rate property."""
+    player = NowPlaying("Test Player")
+    player.rate = 1.5
+    assert player.rate == 1.5

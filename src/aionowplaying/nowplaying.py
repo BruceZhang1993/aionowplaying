@@ -175,3 +175,90 @@ class NowPlaying:
     @duration.setter
     def duration(self, value: timedelta):
         self._interface._playback_properties.Metadata.duration = self._timedelta_to_microseconds(value)
+
+    # Playback state properties
+
+    @property
+    def position(self) -> timedelta | None:
+        """Get current playback position as timedelta."""
+        us = self._interface.get_playback_property(PlaybackPropertyName.Position)
+        if us == 0:
+            return None
+        return self._microseconds_to_timedelta(us)
+
+    @position.setter
+    def position(self, value: timedelta):
+        """Set playback position from timedelta."""
+        self._interface.set_playback_property(
+            PlaybackPropertyName.Position,
+            self._timedelta_to_microseconds(value)
+        )
+
+    @property
+    def is_playing(self) -> bool:
+        """Read-only property. Use set_playing() to change state."""
+        return self._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing
+
+    @property
+    def is_paused(self) -> bool:
+        """Read-only property. Use set_paused() to change state."""
+        return self._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Paused
+
+    @property
+    def is_stopped(self) -> bool:
+        """Read-only property. Use set_stopped() to change state."""
+        return self._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Stopped
+
+    @property
+    def volume(self) -> float:
+        """Get playback volume (0.0 to 1.0)."""
+        return self._interface.get_playback_property(PlaybackPropertyName.Volume)
+
+    @volume.setter
+    def volume(self, value: float):
+        """Set playback volume (0.0 to 1.0)."""
+        self._interface.set_playback_property(PlaybackPropertyName.Volume, value)
+
+    @property
+    def shuffle(self) -> bool:
+        """Get shuffle state."""
+        return self._interface.get_playback_property(PlaybackPropertyName.Shuffle)
+
+    @shuffle.setter
+    def shuffle(self, value: bool):
+        """Set shuffle state."""
+        self._interface.set_playback_property(PlaybackPropertyName.Shuffle, value)
+
+    @property
+    def loop_status(self) -> LoopStatus:
+        """Get loop status (None, Track, or Playlist)."""
+        return self._interface.get_playback_property(PlaybackPropertyName.LoopStatus)
+
+    @loop_status.setter
+    def loop_status(self, value: LoopStatus):
+        """Set loop status."""
+        self._interface.set_playback_property(PlaybackPropertyName.LoopStatus, value)
+
+    @property
+    def rate(self) -> float:
+        """Get playback rate."""
+        return self._interface.get_playback_property(PlaybackPropertyName.Rate)
+
+    @rate.setter
+    def rate(self, value: float):
+        """Set playback rate."""
+        self._interface.set_playback_property(PlaybackPropertyName.Rate, value)
+
+    # State convenience methods
+
+    def set_playing(self) -> None:
+        """Set playback status to Playing."""
+        self._interface.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Playing)
+
+    def set_paused(self) -> None:
+        """Set playback status to Paused."""
+        self._interface.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Paused)
+
+    def set_stopped(self) -> None:
+        """Set playback status to Stopped."""
+        self._interface.set_playback_property(PlaybackPropertyName.PlaybackStatus, PlaybackStatus.Stopped)
