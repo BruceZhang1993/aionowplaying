@@ -65,8 +65,28 @@ class NowPlaying:
 
     def _setup_capabilities(self) -> None:
         """Setup playback capabilities based on provided callbacks."""
-        # Will be implemented in later tasks
-        pass
+        control_callbacks = [
+            'on_play', 'on_pause', 'on_next', 'on_previous',
+            'on_seek', 'on_stop', 'on_volume', 'on_shuffle', 'on_loop'
+        ]
+
+        # Set CanControl if any control callback is registered
+        has_control = any(self._callbacks.get(cb) for cb in control_callbacks)
+        if has_control:
+            self._interface.set_playback_property(PlaybackPropertyName.CanControl, True)
+
+        # Set specific capabilities
+        callback_capability_map = {
+            'on_play': PlaybackPropertyName.CanPlay,
+            'on_pause': PlaybackPropertyName.CanPause,
+            'on_next': PlaybackPropertyName.CanGoNext,
+            'on_previous': PlaybackPropertyName.CanGoPrevious,
+            'on_seek': PlaybackPropertyName.CanSeek,
+        }
+
+        for callback_name, capability in callback_capability_map.items():
+            if self._callbacks.get(callback_name):
+                self._interface.set_playback_property(capability, True)
 
     def _apply_metadata(self, metadata: dict[str, Any]) -> None:
         """Apply metadata to the playback properties."""

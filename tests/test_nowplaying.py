@@ -1,7 +1,7 @@
 import pytest
 
 import aionowplaying as aionp
-from aionowplaying import NowPlaying
+from aionowplaying import NowPlaying, PlaybackPropertyName
 
 
 class DummyInterface(aionp.BaseInterface):
@@ -104,3 +104,22 @@ def test_nowplaying_init_with_identity():
     player = NowPlaying("Test Player", identity="Custom Identity")
     assert player.name == "Test Player"
     assert player._identity == "Custom Identity"
+
+
+def test_capability_inference_from_callbacks():
+    """Test that capabilities are auto-inferred from callbacks."""
+    player = NowPlaying(
+        "Test Player",
+        on_play=lambda: None,
+        on_pause=lambda: None,
+        on_next=lambda: None,
+    )
+
+    # Check that capabilities were set
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanPlay) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanPause) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanGoNext) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanControl) is True
+
+    # Check that non-registered capabilities are False
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanGoPrevious) is False
