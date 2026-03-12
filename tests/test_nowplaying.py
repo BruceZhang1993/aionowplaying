@@ -297,3 +297,25 @@ async def test_start_stop_lifecycle():
         pass
 
     await player.stop()
+
+
+@pytest.mark.asyncio
+async def test_callback_execution():
+    """Test that registered callbacks are executed."""
+    call_log = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_play=lambda: call_log.append('play'),
+        on_pause=lambda: call_log.append('pause'),
+    )
+
+    # Simulate callback execution through the interface
+    await player._interface.on_play()
+    await player._interface.on_pause()
+
+    # Allow any async tasks to complete
+    await asyncio.sleep(0.1)
+
+    assert 'play' in call_log
+    assert 'pause' in call_log

@@ -1,5 +1,6 @@
 from datetime import timedelta
 from typing import Any, Callable
+import asyncio
 
 from aionowplaying.interface import _select_interface_impl
 from aionowplaying.interface.base import (
@@ -59,6 +60,9 @@ class NowPlaying:
         # Setup capabilities based on callbacks
         self._setup_capabilities()
 
+        # Setup callback wrappers
+        self._setup_callback_wrapper()
+
         # Apply initial metadata
         if metadata:
             self._apply_metadata(metadata)
@@ -87,6 +91,55 @@ class NowPlaying:
         for callback_name, capability in callback_capability_map.items():
             if self._callbacks.get(callback_name):
                 self._interface.set_playback_property(capability, True)
+
+    def _run_callback(self, name: str, *args) -> None:
+        """Execute a callback, handling both sync and async."""
+        callback = self._callbacks.get(name)
+        if callback:
+            result = callback(*args)
+            if asyncio.iscoroutine(result):
+                asyncio.create_task(result)
+
+    def _setup_callback_wrapper(self) -> None:
+        """Set up callback wrappers to connect interface to user callbacks."""
+        async def wrapped_on_play():
+            self._run_callback('on_play')
+
+        async def wrapped_on_pause():
+            self._run_callback('on_pause')
+
+        async def wrapped_on_next():
+            self._run_callback('on_next')
+
+        async def wrapped_on_previous():
+            self._run_callback('on_previous')
+
+        async def wrapped_on_seek(offset: int):
+            delta = self._microseconds_to_timedelta(offset)
+            self._run_callback('on_seek', delta)
+
+        async def wrapped_on_stop():
+            self._run_callback('on_stop')
+
+        async def wrapped_on_volume(volume: float):
+            self._run_callback('on_volume', volume)
+
+        async def wrapped_on_shuffle(shuffle: bool):
+            self._run_callback('on_shuffle', shuffle)
+
+        async def wrapped_on_loop(status):
+            self._run_callback('on_loop', status)
+
+        # Assign wrapped callbacks
+        self._interface.on_play = wrapped_on_play
+        self._interface.on_pause = wrapped_on_pause
+        self._interface.on_next = wrapped_on_next
+        self._interface.on_previous = wrapped_on_previous
+        self._interface.on_seek = wrapped_on_seek
+        self._interface.on_stop = wrapped_on_stop
+        self._interface.on_volume = wrapped_on_volume
+        self._interface.on_shuffle = wrapped_on_shuffle
+        self._interface.on_loop_status = wrapped_on_loop
 
     def _apply_metadata(self, metadata: dict[str, Any]) -> None:
         """Apply metadata to the playback properties."""
