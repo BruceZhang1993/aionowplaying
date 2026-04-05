@@ -103,7 +103,8 @@ class MacOSInterface(BaseInterface):
 
     def get_playback_property(self, name: PlaybackPropertyName) -> Any:
         if name == PlaybackPropertyName.Position:
-            return self._get_property(MPNowPlayingInfoPropertyElapsedPlaybackTime)
+            # MPNowPlayingInfoPropertyElapsedPlaybackTime is in seconds, convert to microseconds
+            return self._get_property(MPNowPlayingInfoPropertyElapsedPlaybackTime) * 1000 * 1000
         if name == PlaybackPropertyName.Rate:
             return self._get_property(MPNowPlayingInfoPropertyPlaybackRate)
         return super().get_playback_property(name)

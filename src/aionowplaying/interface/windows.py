@@ -27,7 +27,11 @@ def TimeSpan(x_microsec):
 class WindowsInterface(BaseInterface):
     def __init__(self, name):
         super(WindowsInterface, self).__init__(name)
-        self._loop = asyncio.get_event_loop()
+        # Try to get the event loop if one exists, but don't fail if not
+        try:
+            self._loop = asyncio.get_event_loop()
+        except RuntimeError:
+            self._loop = None
         self._running = True
         self._playback_properties = PlaybackProperties()
         self._player = MediaPlayer()
@@ -276,6 +280,18 @@ class WindowsInterface(BaseInterface):
     def _run_task(self, task):
         # Windows callbacks may be invoked in non-main thread, besides,
         # they may run in different threads.
+        # Get the event loop lazily - either the running loop or create one
+        if self._loop is None:
+            try:
+                self._loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # No running loop, try to get or create one
+                try:
+                    self._loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    self._loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(self._loop)
+
         if threading.current_thread() is not threading.main_thread():
             asyncio.run_coroutine_threadsafe(task, self._loop)
         else:

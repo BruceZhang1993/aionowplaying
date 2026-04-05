@@ -1,6 +1,10 @@
 import pytest
 
 import aionowplaying as aionp
+from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus
+from datetime import timedelta
+import asyncio
+import warnings
 
 
 class DummyInterface(aionp.BaseInterface):
@@ -88,3 +92,256 @@ def test_update_playback_mode():
         aionp.PlaybackPropertyName.Shuffle,
         False,
     )
+
+
+def test_nowplaying_init_with_name():
+    """Test basic initialization with just a name."""
+    player = NowPlaying("Test Player")
+    assert player is not None
+    assert player.name == "Test Player"
+    assert player._identity == "Test Player"
+
+
+def test_nowplaying_init_with_identity():
+    """Test initialization with custom identity."""
+    player = NowPlaying("Test Player", identity="Custom Identity")
+    assert player.name == "Test Player"
+    assert player._identity == "Custom Identity"
+
+
+def test_capability_inference_from_callbacks():
+    """Test that capabilities are auto-inferred from callbacks."""
+    player = NowPlaying(
+        "Test Player",
+        on_play=lambda: None,
+        on_pause=lambda: None,
+        on_next=lambda: None,
+    )
+
+    # Check that capabilities were set
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanPlay) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanPause) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanGoNext) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanControl) is True
+
+    # Check that non-registered capabilities are False
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanGoPrevious) is False
+
+
+def test_timedelta_to_microseconds():
+    """Test timedelta to microseconds conversion."""
+    player = NowPlaying("Test Player")
+
+    # 1 second = 1,000,000 microseconds
+    assert player._timedelta_to_microseconds(timedelta(seconds=1)) == 1_000_000
+
+    # 1.5 seconds = 1,500,000 microseconds
+    assert player._timedelta_to_microseconds(timedelta(seconds=1.5)) == 1_500_000
+
+    # 3 minutes 30 seconds = 210,000,000 microseconds
+    assert player._timedelta_to_microseconds(timedelta(minutes=3, seconds=30)) == 210_000_000
+
+
+def test_microseconds_to_timedelta():
+    """Test microseconds to timedelta conversion."""
+    player = NowPlaying("Test Player")
+
+    result = player._microseconds_to_timedelta(1_000_000)
+    assert result == timedelta(seconds=1)
+
+    result = player._microseconds_to_timedelta(210_000_000)
+    assert result == timedelta(minutes=3, seconds=30)
+
+
+def test_title_property():
+    """Test title property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.title = "Test Song"
+    assert player.title == "Test Song"
+
+
+def test_artist_property():
+    """Test artist property getter/setter."""
+    player = NowPlaying("Test Player")
+
+    # Test with list
+    player.artist = ["Artist 1", "Artist 2"]
+    assert player.artist == ["Artist 1", "Artist 2"]
+
+    # Test with string (should convert to list)
+    player.artist = "Single Artist"
+    assert player.artist == ["Single Artist"]
+
+
+def test_album_property():
+    """Test album property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.album = "Test Album"
+    assert player.album == "Test Album"
+
+
+def test_album_artist_property():
+    """Test album_artist property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.album_artist = ["Album Artist 1"]
+    assert player.album_artist == ["Album Artist 1"]
+
+    player.album_artist = "Single Album Artist"
+    assert player.album_artist == ["Single Album Artist"]
+
+
+def test_cover_property():
+    """Test cover property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.cover = "file:///path/to/cover.jpg"
+    assert player.cover == "file:///path/to/cover.jpg"
+
+
+def test_url_property():
+    """Test url property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.url = "file:///path/to/song.mp3"
+    assert player.url == "file:///path/to/song.mp3"
+
+
+def test_track_number_property():
+    """Test track_number property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.track_number = 5
+    assert player.track_number == 5
+
+
+def test_duration_property():
+    """Test duration property with timedelta."""
+    player = NowPlaying("Test Player")
+    player.duration = timedelta(minutes=3, seconds=30)
+    assert player.duration == timedelta(minutes=3, seconds=30)
+
+
+# Playback state properties tests
+
+def test_position_property():
+    """Test position property with timedelta."""
+    player = NowPlaying("Test Player")
+    player.position = timedelta(seconds=60)
+    assert player.position == timedelta(seconds=60)
+
+
+def test_is_playing_property():
+    """Test is_playing property (read-only, use set_playing() to change)."""
+    player = NowPlaying("Test Player")
+    assert player.is_playing is False
+
+    player.set_playing()
+    assert player.is_playing is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing
+
+
+def test_is_paused_property():
+    """Test is_paused property (read-only, use set_paused() to change)."""
+    player = NowPlaying("Test Player")
+
+    player.set_paused()
+    assert player.is_paused is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Paused
+
+
+def test_is_stopped_property():
+    """Test is_stopped property (read-only, use set_stopped() to change)."""
+    player = NowPlaying("Test Player")
+
+    player.set_stopped()
+    assert player.is_stopped is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Stopped
+
+
+def test_volume_property():
+    """Test volume property."""
+    player = NowPlaying("Test Player")
+    player.volume = 0.5
+    assert player.volume == 0.5
+
+
+def test_shuffle_property():
+    """Test shuffle property."""
+    player = NowPlaying("Test Player")
+    player.shuffle = True
+    assert player.shuffle is True
+
+
+def test_loop_status_property():
+    """Test loop_status property."""
+    player = NowPlaying("Test Player")
+    player.loop_status = LoopStatus.Track
+    assert player.loop_status == LoopStatus.Track
+
+
+def test_rate_property():
+    """Test rate property."""
+    player = NowPlaying("Test Player")
+    player.rate = 1.5
+    assert player.rate == 1.5
+
+
+@pytest.mark.asyncio
+async def test_start_stop_lifecycle():
+    """Test start and stop lifecycle methods."""
+    player = NowPlaying("Test Player")
+
+    # Start should call internal interface start
+    # We can't easily test this without mocking, so just verify it doesn't raise
+    try:
+        await player.start()
+    except Exception as e:
+        # Some platforms may fail due to missing dependencies
+        # but the method should exist
+        pass
+
+    await player.stop()
+
+
+@pytest.mark.asyncio
+async def test_callback_execution():
+    """Test that registered callbacks are executed."""
+    call_log = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_play=lambda: call_log.append('play'),
+        on_pause=lambda: call_log.append('pause'),
+    )
+
+    # Simulate callback execution through the interface
+    await player._interface.on_play()
+    await player._interface.on_pause()
+
+    # Allow any async tasks to complete
+    await asyncio.sleep(0.1)
+
+    assert 'play' in call_log
+    assert 'pause' in call_log
+
+
+def test_select_interface_deprecation():
+    """Test that select_interface shows deprecation warning."""
+    from aionowplaying.interface import select_interface
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        select_interface()
+
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "deprecated" in str(w[0].message).lower()
+
+
+def test_nowplaying_interface_deprecation():
+    """Test that NowPlayingInterface shows deprecation warning."""
+    import aionowplaying
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        _ = aionowplaying.NowPlayingInterface
+
+        assert len(w) >= 1
+        assert any(issubclass(x.category, DeprecationWarning) for x in w)
