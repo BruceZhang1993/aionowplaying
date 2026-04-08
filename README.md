@@ -94,6 +94,22 @@ uv sync --dev
 uv run pytest -v
 ```
 
+## Website
+
+This repository also includes the project website and GitHub Pages build.
+
+Install the development and docs dependencies first, then build the site locally:
+
+```shell
+uv sync --dev
+uv pip install -r docs/requirements.txt
+uv run python scripts/build_site.py
+```
+
+The generated site is written to `dist/`.
+
+GitHub Pages is configured in [.github/workflows/pages.yml](.github/workflows/pages.yml) and publishes the site automatically on pushes to `develop`.
+
 ## License
 
 This project is licensed under GPL-3.0-only. See [LICENSE.txt](LICENSE.txt).
