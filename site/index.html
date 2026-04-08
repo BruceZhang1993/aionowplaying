@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="aionowplaying is a cross-platform Python Now Playing client for Linux, macOS, and Windows."
+    />
+    <title>aionowplaying | Cross-platform Now Playing client</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script defer src="./assets/script.js"></script>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="shell">
+        <nav class="topbar" aria-label="Primary">
+          <a class="brand" href="./">aionowplaying</a>
+          <div class="nav-links">
+            <a href="./docs/">Docs</a>
+            <a href="https://pypi.org/project/aionowplaying/">PyPI</a>
+            <a href="https://github.com/BruceZhang1993/aionowplaying">GitHub</a>
+            <a href="https://github.com/BruceZhang1993/aionowplaying/blob/develop/README.zh-CN.md">中文</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <section class="hero-copy">
+            <p class="eyebrow">Python library</p>
+            <h1>Cross-platform Now Playing for Python applications.</h1>
+            <p class="lede">
+              A unified interface for Linux MPRIS2, macOS, and Windows, with typed playback models and a simplified
+              fluent API.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="./docs/">Read the Docs</a>
+              <a class="button button-secondary" href="https://github.com/BruceZhang1993/aionowplaying">
+                View on GitHub
+              </a>
+            </div>
+            <pre class="install-block"><code>pip install aionowplaying</code></pre>
+          </section>
+
+          <aside class="hero-panel" aria-label="Project summary">
+            <div class="panel-card">
+              <span class="panel-label">Supported targets</span>
+              <strong>Linux, macOS, Windows</strong>
+              <p>One package that selects the right backend at runtime.</p>
+            </div>
+            <div class="panel-card">
+              <span class="panel-label">Documentation</span>
+              <strong>Published with Sphinx</strong>
+              <p>Browse the docs, quick start, and API reference from one gateway.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section shell" aria-labelledby="why-title">
+        <div class="section-heading">
+          <p class="eyebrow">Why aionowplaying</p>
+          <h2 id="why-title">A small, direct homepage for a technical Python package.</h2>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>Unified Python interface</h3>
+            <p>Use one package for Now Playing integration across platforms.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Automatic backend selection</h3>
+            <p>Platform-specific backends are selected automatically at runtime.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Typed playback models</h3>
+            <p>Playback and property models are powered by Pydantic.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Fluent API</h3>
+            <p>Use the higher-level <code>NowPlaying</code> interface for common integration workflows.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section shell" aria-labelledby="platforms-title">
+        <div class="section-heading">
+          <p class="eyebrow">Platform support</p>
+          <h2 id="platforms-title">One package, three desktop targets.</h2>
+        </div>
+
+        <div class="platform-grid">
+          <article class="platform-card">
+            <h3>Linux</h3>
+            <p>MPRIS2 support for Linux desktop integrations.</p>
+          </article>
+          <article class="platform-card">
+            <h3>macOS</h3>
+            <p>Native integration path for Apple platforms.</p>
+          </article>
+          <article class="platform-card">
+            <h3>Windows</h3>
+            <p>Windows support through the same Python API.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section shell" aria-labelledby="quickstart-title">
+        <div class="section-heading">
+          <p class="eyebrow">Quick start</p>
+          <h2 id="quickstart-title">See the minimal integration shape immediately.</h2>
+        </div>
+
+        <div class="code-slab">
+          <pre><code>import asyncio
+from datetime import timedelta
+from aionowplaying import NowPlaying
+
+player = NowPlaying(
+    "My Player",
+    metadata={
+        "title": "Song Name",
+        "artist": ["Artist"],
+        "album": "Album",
+        "duration": timedelta(minutes=3, seconds=30),
+    },
+    on_play=lambda: my_player.play(),
+    on_pause=lambda: my_player.pause(),
+    on_next=lambda: my_player.next(),
+)
+
+player.title = "New Song"
+player.position = timedelta(seconds=60)
+player.set_playing()
+
+asyncio.run(player.start())</code></pre>
+        </div>
+      </section>
+
+      <section class="section shell" aria-labelledby="docs-gateway-title">
+        <div class="section-heading">
+          <p class="eyebrow">Docs gateway</p>
+          <h2 id="docs-gateway-title">Jump directly to the material you need.</h2>
+        </div>
+
+        <div class="link-grid">
+          <a class="link-card" href="./docs/">
+            <strong>Documentation home</strong>
+            <span>Browse the published Sphinx docs.</span>
+          </a>
+          <a class="link-card" href="./docs/quickstart.html">
+            <strong>Quick start</strong>
+            <span>Go straight to installation and examples.</span>
+          </a>
+          <a class="link-card" href="./docs/api.html">
+            <strong>API reference</strong>
+            <span>Inspect exported interfaces and models.</span>
+          </a>
+          <a class="link-card" href="https://pypi.org/project/aionowplaying/">
+            <strong>PyPI</strong>
+            <span>Install and inspect package metadata.</span>
+          </a>
+          <a class="link-card" href="https://github.com/BruceZhang1993/aionowplaying/blob/develop/README.zh-CN.md">
+            <strong>Chinese README</strong>
+            <span>Read the Chinese project introduction.</span>
+          </a>
+          <a class="link-card" href="https://aionowplaying.readthedocs.io/en/latest/">
+            <strong>Read the Docs</strong>
+            <span>Use the hosted docs endpoint as an alternate entry.</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-inner">
+        <p>aionowplaying is licensed under GPL-3.0-only.</p>
+        <div class="footer-links">
+          <a href="https://github.com/BruceZhang1993/aionowplaying">Repository</a>
+          <a href="https://github.com/BruceZhang1993/aionowplaying/issues">Issue Tracker</a>
+          <a href="./docs/">Docs</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
