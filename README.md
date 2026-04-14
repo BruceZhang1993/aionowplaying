@@ -74,6 +74,66 @@ class MyPlayer(BaseInterface):
         pass
 ```
 
+## BaseInterface Platform Coverage
+
+The tables below describe native backend coverage for each `BaseInterface` method. They focus on platform mapping, not just whether the method can be overridden in Python.
+
+- `🟢 Native`: implemented or triggered by the platform backend.
+- `🟡 Partial`: available with limitations or semantics that differ from the base method contract.
+- `⚪ Cache only`: stored locally, but not exposed by the native platform API.
+- `🔴 Unimplemented`: no platform-specific implementation. Base no-op methods are treated as unimplemented.
+
+### Construction And Lifecycle
+
+| Method | Linux (MPRIS2) | macOS | Windows |
+| --- | --- | --- | --- |
+| `__init__` | 🟢 Native<br>D-Bus setup | 🟢 Native<br>MediaPlayer center setup | 🟢 Native<br>SMTC setup |
+| `start` | 🟢 Native<br>D-Bus connect/export loop | 🟢 Native<br>no-op | 🟢 Native<br>no-op |
+| `stop` | 🟢 Native<br>D-Bus disconnect | 🔴 Unimplemented | 🟡 Partial<br>local flag only |
+
+### App-Level Callbacks
+
+| Method | Linux (MPRIS2) | macOS | Windows |
+| --- | --- | --- | --- |
+| `on_fullscreen` | 🟢 Native<br>`Fullscreen` setter | 🔴 Unimplemented | 🔴 Unimplemented |
+| `on_raise` | 🟢 Native<br>`Raise` command | 🔴 Unimplemented | 🔴 Unimplemented |
+| `on_quit` | 🟢 Native<br>`Quit` command | 🔴 Unimplemented | 🔴 Unimplemented |
+
+### Playback Callbacks
+
+| Method | Linux (MPRIS2) | macOS | Windows |
+| --- | --- | --- | --- |
+| `on_loop_status` | 🟢 Native<br>`LoopStatus` setter | 🟢 Native<br>repeat command | 🟢 Native<br>repeat request |
+| `on_rate` | 🟢 Native<br>`Rate` setter | 🟢 Native<br>rate command | 🟢 Native<br>rate request |
+| `on_shuffle` | 🟢 Native<br>`Shuffle` setter | 🟢 Native<br>shuffle command | 🟢 Native<br>shuffle request |
+| `on_volume` | 🟢 Native<br>`Volume` setter | 🔴 Unimplemented | 🟡 Partial<br>read-only sound level |
+| `on_next` | 🟢 Native<br>`Next` command | 🟢 Native<br>next command | 🟢 Native<br>Next button |
+| `on_previous` | 🟢 Native<br>`Previous` command | 🟢 Native<br>previous command | 🟢 Native<br>Previous button |
+| `on_pause` | 🟢 Native<br>`Pause` command | 🟢 Native<br>pause command | 🟢 Native<br>Pause button |
+| `on_play_pause` | 🟢 Native<br>`PlayPause` command | 🟢 Native<br>toggle command | 🔴 Unimplemented |
+| `on_play` | 🟢 Native<br>`Play` command | 🟢 Native<br>play command | 🟢 Native<br>Play button |
+| `on_stop` | 🟢 Native<br>`Stop` command | 🟡 Partial<br>framework-dependent | 🟢 Native<br>Stop button |
+
+### Position And URI Callbacks
+
+| Method | Linux (MPRIS2) | macOS | Windows |
+| --- | --- | --- | --- |
+| `on_seek` | 🟢 Native<br>offset seek | 🟡 Partial<br>absolute position | 🟡 Partial<br>absolute position |
+| `on_open_uri` | 🟢 Native<br>`OpenUri` command | 🔴 Unimplemented | 🔴 Unimplemented |
+| `on_set_position` | 🟢 Native<br>`SetPosition` command | 🟢 Native<br>position command | 🟢 Native<br>position request |
+| `seeked` | 🟢 Native<br>`Seeked` signal | 🔴 Unimplemented | 🔴 Unimplemented |
+
+### Property APIs
+
+| Method | Linux (MPRIS2) | macOS | Windows |
+| --- | --- | --- | --- |
+| `set_property` | 🟢 Native<br>player properties | ⚪ Cache only<br>no player-level API | ⚪ Cache only<br>no player-level API |
+| `set_playback_property` | 🟢 Native<br>playback properties | 🟡 Partial<br>some fields unsupported | 🟡 Partial<br>some fields local only |
+| `set_tracklist_property` | 🟢 Native<br>writes MPRIS TrackList properties | ⚪ Cache only | ⚪ Cache only |
+| `get_property` | 🟢 Native<br>player properties | ⚪ Cache only<br>cached value | ⚪ Cache only<br>cached value |
+| `get_playback_property` | 🟢 Native<br>playback properties | 🟡 Partial<br>`Position`/`Rate` native, others cached | ⚪ Cache only<br>cached value |
+| `get_tracklist_property` | 🟢 Native<br>TrackList properties | ⚪ Cache only<br>cached value | ⚪ Cache only<br>cached value |
+
 ## Documentation
 
 - Interface/API documentation: https://aionowplaying.readthedocs.io/en/latest/
