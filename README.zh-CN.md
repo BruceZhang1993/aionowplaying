@@ -5,6 +5,11 @@
 [![CI](https://github.com/BruceZhang1993/aionowplaying/actions/workflows/ci.yml/badge.svg)](https://github.com/BruceZhang1993/aionowplaying/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/BruceZhang1993/aionowplaying/graph/badge.svg?token=RQ93AOUTDC)](https://codecov.io/github/BruceZhang1993/aionowplaying)
 [![PyPI version](https://img.shields.io/pypi/v/aionowplaying.svg)](https://pypi.org/project/aionowplaying/)
+[![Python versions](https://img.shields.io/pypi/pyversions/aionowplaying.svg)](https://pypi.org/project/aionowplaying/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/aionowplaying.svg)](https://pypi.org/project/aionowplaying/)
+[![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-4c1.svg)](https://pypi.org/project/aionowplaying/)
+[![Read the Docs](https://readthedocs.org/projects/aionowplaying/badge/?version=latest)](https://aionowplaying.readthedocs.io/en/latest/)
+[![Made with uv](https://img.shields.io/badge/made%20with-uv-6e56cf?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 
 一个支持 Linux（MPRIS2）、macOS、Windows 的跨平台 Now Playing 客户端库。

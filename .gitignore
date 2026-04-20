@@ -12,3 +12,4 @@ __pycache__
 /coverage.xml
 /junit.xml
 /docs/_build/
+/.codex
