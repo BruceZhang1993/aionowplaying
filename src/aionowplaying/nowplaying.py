@@ -143,8 +143,42 @@ class NowPlaying:
 
     def _apply_metadata(self, metadata: dict[str, Any]) -> None:
         """Apply metadata to the playback properties."""
-        # Will be implemented in later tasks
-        pass
+        metadata_bean = self._interface._playback_properties.Metadata
+
+        field_aliases = {
+            'id': 'id_',
+            'id_': 'id_',
+            'media_type': 'media_type',
+            'duration': 'duration',
+            'cover': 'cover',
+            'album': 'album',
+            'album_artist': 'albumArtist',
+            'albumArtist': 'albumArtist',
+            'artist': 'artist',
+            'lyrics': 'lyrics',
+            'comments': 'comments',
+            'composer': 'composer',
+            'genre': 'genre',
+            'lyricist': 'lyricist',
+            'title': 'title',
+            'track_number': 'trackNumber',
+            'trackNumber': 'trackNumber',
+            'url': 'url',
+        }
+
+        list_fields = {'albumArtist', 'artist', 'comments', 'composer', 'genre', 'lyricist'}
+
+        for key, value in metadata.items():
+            target = field_aliases.get(key)
+            if target is None:
+                continue
+            if target in list_fields and isinstance(value, str):
+                value = [value]
+            if target == 'duration' and isinstance(value, timedelta):
+                value = self._timedelta_to_microseconds(value)
+            setattr(metadata_bean, target, value)
+
+        self._interface.set_playback_property(PlaybackPropertyName.Metadata, metadata_bean)
 
     @staticmethod
     def _timedelta_to_microseconds(td: timedelta) -> int:
