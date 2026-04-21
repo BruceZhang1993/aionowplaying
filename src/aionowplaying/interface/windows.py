@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import webbrowser
 import threading
 from typing import Any
 from datetime import timedelta
@@ -22,6 +23,14 @@ from aionowplaying.interface.base import TrackListPropertyName, PlaybackStatus, 
 
 def TimeSpan(x_microsec):
     return timedelta(microseconds=x_microsec)
+
+
+def _open_uri_with_system(uri: str):
+    if not uri:
+        raise ValueError("URI must not be empty")
+
+    if not webbrowser.open(uri):
+        raise RuntimeError(f"Failed to open URI: {uri}")
 
 
 class WindowsInterface(BaseInterface):
@@ -273,6 +282,9 @@ class WindowsInterface(BaseInterface):
     async def start(self):
         # Don't need a background server for Windows
         pass
+
+    async def on_open_uri(self, uri: str):
+        await asyncio.to_thread(_open_uri_with_system, uri)
 
     async def stop(self):
         self._running = False

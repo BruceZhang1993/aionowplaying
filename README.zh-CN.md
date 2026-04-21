@@ -40,7 +40,13 @@ import asyncio
 from datetime import timedelta
 from aionowplaying import NowPlaying
 
-# 创建播放器并设置元数据和回调
+# 将媒体回调绑定到你的应用逻辑。
+def handle_play():
+    pass
+
+def handle_pause():
+    pass
+
 player = NowPlaying(
     "My Player",
     metadata={
@@ -49,9 +55,8 @@ player = NowPlaying(
         "album": "专辑",
         "duration": timedelta(minutes=3, seconds=30),
     },
-    on_play=lambda: my_player.play(),
-    on_pause=lambda: my_player.pause(),
-    on_next=lambda: my_player.next(),
+    on_play=handle_play,
+    on_pause=handle_pause,
 )
 
 # 播放过程中更新元数据
@@ -125,9 +130,25 @@ class MyPlayer(BaseInterface):
 | 方法 | Linux (MPRIS2) | macOS | Windows |
 | --- | --- | --- | --- |
 | `on_seek` | 🟢 原生实现<br>offset seek | 🟡 部分实现<br>绝对位置 | 🟡 部分实现<br>绝对位置 |
-| `on_open_uri` | 🟢 原生实现<br>`OpenUri` 命令 | 🔴 未实现 | 🔴 未实现 |
+| `on_open_uri` | 🟢 原生实现<br>`OpenUri` 命令 | 🟡 库级辅助<br>由当前进程打开 URI | 🟡 库级辅助<br>由当前进程打开 URI |
 | `on_set_position` | 🟢 原生实现<br>`SetPosition` 命令 | 🟢 原生实现<br>位置命令 | 🟢 原生实现<br>位置请求 |
 | `seeked` | 🟢 原生实现<br>`Seeked` 信号 | 🔴 未实现 | 🔴 未实现 |
+
+### URI 激活
+
+URI 激活是一个分工明确的能力：
+
+- 在 Linux 上，`on_open_uri` 由 MPRIS 原生暴露。
+- 在 macOS 和 Windows 上，库可以帮助当前进程主动打开 URI。
+- 但注册自定义协议并接收系统 URI 激活，仍然需要宿主应用来完成。
+
+协议名称由宿主应用自行决定，`aionowplaying` 不强制公共 scheme 使用 `aionowplaying`。
+
+平台文档：
+
+- [`docs/platform-uri-activation.rst`](docs/platform-uri-activation.rst)
+- [`docs/platform-uri-activation-macos.rst`](docs/platform-uri-activation-macos.rst)
+- [`docs/platform-uri-activation-windows.rst`](docs/platform-uri-activation-windows.rst)
 
 ### 属性接口
 
@@ -183,7 +204,7 @@ uv run pytest -v
 
 ### 提交 Pull Request
 
-1. Fork 仓库并从 `main` 创建功能分支
+1. Fork 仓库并从 `master` 创建功能分支
 2. 本地运行测试：`uv run pytest -v`
 3. 确保代码符合项目规范
 4. 提交信息清晰明了
