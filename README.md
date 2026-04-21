@@ -39,7 +39,13 @@ import asyncio
 from datetime import timedelta
 from aionowplaying import NowPlaying
 
-# Create player with metadata and callbacks
+# Wire media callbacks to your own application logic.
+def handle_play():
+    pass
+
+def handle_pause():
+    pass
+
 player = NowPlaying(
     "My Player",
     metadata={
@@ -48,9 +54,8 @@ player = NowPlaying(
         "album": "Album",
         "duration": timedelta(minutes=3, seconds=30),
     },
-    on_play=lambda: my_player.play(),
-    on_pause=lambda: my_player.pause(),
-    on_next=lambda: my_player.next(),
+    on_play=handle_play,
+    on_pause=handle_pause,
 )
 
 # Update metadata during playback
@@ -124,9 +129,25 @@ The tables below describe native backend coverage for each `BaseInterface` metho
 | Method | Linux (MPRIS2) | macOS | Windows |
 | --- | --- | --- | --- |
 | `on_seek` | 🟢 Native<br>offset seek | 🟡 Partial<br>absolute position | 🟡 Partial<br>absolute position |
-| `on_open_uri` | 🟢 Native<br>`OpenUri` command | 🔴 Unimplemented | 🔴 Unimplemented |
+| `on_open_uri` | 🟢 Native<br>`OpenUri` command | 🟡 Library helper<br>open URI from current process | 🟡 Library helper<br>open URI from current process |
 | `on_set_position` | 🟢 Native<br>`SetPosition` command | 🟢 Native<br>position command | 🟢 Native<br>position request |
 | `seeked` | 🟢 Native<br>`Seeked` signal | 🔴 Unimplemented | 🔴 Unimplemented |
+
+### URI Activation
+
+URI activation is a split responsibility:
+
+- On Linux, `on_open_uri` is exposed natively through MPRIS.
+- On macOS and Windows, the library can help the current process open a URI.
+- Registering a custom protocol and receiving system URI activation still belongs to the host application.
+
+The scheme name is host-defined. `aionowplaying` does not require the public scheme to be `aionowplaying`.
+
+Platform docs:
+
+- [`docs/platform-uri-activation.rst`](docs/platform-uri-activation.rst)
+- [`docs/platform-uri-activation-macos.rst`](docs/platform-uri-activation-macos.rst)
+- [`docs/platform-uri-activation-windows.rst`](docs/platform-uri-activation-windows.rst)
 
 ### Property APIs
 
@@ -173,7 +194,7 @@ uv run python scripts/build_site.py
 
 The generated site is written to `dist/`.
 
-GitHub Pages is configured in [.github/workflows/pages.yml](.github/workflows/pages.yml) and publishes the site automatically on pushes to `develop`.
+GitHub Pages is configured in [.github/workflows/pages.yml](.github/workflows/pages.yml) and publishes the site automatically on pushes to `master`.
 
 ## License
 
@@ -198,7 +219,7 @@ If you find a bug or have a feature request:
 
 ### Pull Requests
 
-1. Fork the repository and create a feature branch from `main`
+1. Fork the repository and create a feature branch from `master`
 2. Run tests locally: `uv run pytest -v`
 3. Ensure code follows project conventions
 4. Write clear commit messages

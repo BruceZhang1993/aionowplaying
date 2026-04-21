@@ -3,7 +3,7 @@ import os
 from typing import Any
 
 from Foundation import NSMutableDictionary, NSURL
-from AppKit import NSImage
+from AppKit import NSWorkspace, NSImage
 from MediaPlayer import MPRemoteCommandCenter, MPNowPlayingInfoCenter
 from MediaPlayer import (
     MPMediaItemPropertyTitle, MPMediaItemPropertyArtist, MPMediaItemPropertyAlbumTitle,
@@ -227,6 +227,15 @@ class MacOSInterface(BaseInterface):
 
     async def start(self):
         pass
+
+    async def on_open_uri(self, uri: str):
+        url = NSURL.URLWithString_(uri)
+        if url is None:
+            raise ValueError(f"Invalid URI: {uri}")
+
+        workspace = NSWorkspace.sharedWorkspace()
+        if not workspace.openURL_(url):
+            raise RuntimeError(f"Failed to open URI: {uri}")
 
     async def _handle_change_playback_position(self, event: MPChangePlaybackPositionCommandEvent):
         if not self.get_playback_property(PlaybackPropertyName.CanSeek):

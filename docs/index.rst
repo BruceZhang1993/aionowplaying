@@ -8,4 +8,5 @@ A cross-platform Now Playing client.
    :caption: Contents:
 
    quickstart
+   platform-uri-activation
    api

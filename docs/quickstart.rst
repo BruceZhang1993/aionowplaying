@@ -3,6 +3,11 @@ Quick Start
 
 This section will guide you through the basic usage of aionowplaying.
 
+If you need URI support, start with the platform overview at
+:doc:`platform-uri-activation`. That page explains the split between
+"open a URI from the current process" and "receive URI activation from the
+operating system", then links to the macOS and Windows host examples.
+
 Installation
 ------------
 
@@ -29,7 +34,13 @@ Use the ``NowPlaying`` class for a simplified interface:
     from datetime import timedelta
     from aionowplaying import NowPlaying
 
-    # Create player with metadata and callbacks
+    # Wire media callbacks to your own application logic.
+    def handle_play():
+        pass
+
+    def handle_pause():
+        pass
+
     player = NowPlaying(
         "My Player",
         metadata={
@@ -38,9 +49,8 @@ Use the ``NowPlaying`` class for a simplified interface:
             "album": "Album",
             "duration": timedelta(minutes=3, seconds=30),
         },
-        on_play=lambda: my_player.play(),
-        on_pause=lambda: my_player.pause(),
-        on_next=lambda: my_player.next(),
+        on_play=handle_play,
+        on_pause=handle_pause,
     )
 
     # Update metadata during playback
@@ -62,6 +72,12 @@ To run the backend in the background, use ``asyncio.ensure_future``:
     from datetime import timedelta
     from aionowplaying import NowPlaying
 
+    def handle_play():
+        pass
+
+    def handle_pause():
+        pass
+
     async def main():
         player = NowPlaying(
             "My Player",
@@ -70,8 +86,8 @@ To run the backend in the background, use ``asyncio.ensure_future``:
                 "artist": ["Artist"],
                 "duration": timedelta(minutes=3),
             },
-            on_play=lambda: my_player.play(),
-            on_pause=lambda: my_player.pause(),
+            on_play=handle_play,
+            on_pause=handle_pause,
         )
 
         # Start in background
@@ -127,23 +143,24 @@ You can register callbacks for media control events:
 
 .. code-block:: python
 
-    from aionowplaying import NowPlaying, LoopStatus
+    from aionowplaying import NowPlaying
+
+    def handle_play():
+        pass
+
+    def handle_pause():
+        pass
 
     player = NowPlaying(
         "My Player",
-        on_play=lambda: player.play(),
-        on_pause=lambda: player.pause(),
-        on_next=lambda: player.next_track(),
-        on_previous=lambda: player.previous_track(),
-        on_stop=lambda: player.stop(),
-        on_seek=lambda pos: player.seek(pos),  # pos is timedelta
-        on_volume=lambda vol: player.set_volume(vol),  # vol is float 0.0-1.0
-        on_shuffle=lambda enabled: player.set_shuffle(enabled),  # enabled is bool
-        on_loop=lambda status: player.set_loop(status),  # status is LoopStatus
+        on_play=handle_play,
+        on_pause=handle_pause,
     )
 
-Capabilities are automatically inferred from the callbacks you provide. For example,
-if you provide ``on_play``, ``CanPlay`` will be set to ``True`` automatically.
+Supported capability flags are derived from the callbacks the backend knows how to
+surface. For example, providing ``on_play`` can enable the corresponding play
+capability, but callback names are not universally or automatically mapped to
+every possible capability.
 
 Advanced Usage
 --------------
@@ -167,3 +184,14 @@ For fine-grained control, inherit from ``BaseInterface``:
 
     The ``select_interface()`` function and ``NowPlayingInterface`` alias are deprecated.
     Use ``NowPlaying`` instead.
+
+URI Activation
+--------------
+
+``aionowplaying`` can help your current process open a URI, but it cannot
+register a URL scheme or receive external URI activations by itself. Host
+applications must define their own custom scheme, register it with the
+operating system, and forward activated URIs back into player logic.
+
+For the cross-platform overview and host-specific examples, see
+:doc:`platform-uri-activation`.
