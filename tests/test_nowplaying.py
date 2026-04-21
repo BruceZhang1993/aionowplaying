@@ -2,6 +2,7 @@ import pytest
 
 import aionowplaying as aionp
 from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus
+from aionowplaying.interface.base import MediaType
 from datetime import timedelta
 import asyncio
 import warnings
@@ -107,6 +108,55 @@ def test_nowplaying_init_with_identity():
     player = NowPlaying("Test Player", identity="Custom Identity")
     assert player.name == "Test Player"
     assert player._identity == "Custom Identity"
+
+
+def test_init_applies_metadata_mapping():
+    """Test that initial metadata is mapped onto NowPlaying properties."""
+    metadata = {
+        "title": "Mapped Song",
+        "artist": "Solo Artist",
+        "album": "Mapped Album",
+        "album_artist": "Album Artist",
+        "cover": "file:///tmp/cover.png",
+        "url": "file:///tmp/song.mp3",
+        "track_number": 7,
+        "duration": timedelta(minutes=4, seconds=5),
+    }
+
+    player = NowPlaying("Test Player", metadata=metadata)
+
+    assert player.title == "Mapped Song"
+    assert player.artist == ["Solo Artist"]
+    assert player.album == "Mapped Album"
+    assert player.album_artist == ["Album Artist"]
+    assert player.cover == "file:///tmp/cover.png"
+    assert player.url == "file:///tmp/song.mp3"
+    assert player.track_number == 7
+    assert player.duration == timedelta(minutes=4, seconds=5)
+
+
+def test_init_applies_extended_metadata_fields():
+    """Test metadata fields stored directly on the underlying MetadataBean."""
+    metadata = {
+        "id": "track-123",
+        "media_type": MediaType.Video,
+        "composer": ["Composer"],
+        "genre": ["Genre"],
+        "lyrics": "lyrics",
+        "comments": ["comment"],
+        "lyricist": ["Lyricist"],
+    }
+
+    player = NowPlaying("Test Player", metadata=metadata)
+    applied = player._interface.get_playback_property(PlaybackPropertyName.Metadata)
+
+    assert applied.id_ == "track-123"
+    assert applied.media_type == MediaType.Video
+    assert applied.composer == ["Composer"]
+    assert applied.genre == ["Genre"]
+    assert applied.lyrics == "lyrics"
+    assert applied.comments == ["comment"]
+    assert applied.lyricist == ["Lyricist"]
 
 
 def test_capability_inference_from_callbacks():
@@ -320,6 +370,39 @@ async def test_callback_execution():
 
     assert 'play' in call_log
     assert 'pause' in call_log
+
+
+@pytest.mark.asyncio
+async def test_seek_callback_converts_microseconds_to_timedelta():
+    """Test seek callback wrapper converts microseconds to timedelta."""
+    offsets = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_seek=lambda delta: offsets.append(delta),
+    )
+
+    await player._interface.on_seek(2_500_000)
+
+    assert offsets == [timedelta(seconds=2, microseconds=500000)]
+
+
+@pytest.mark.asyncio
+async def test_async_callback_is_scheduled():
+    """Test async callback results are scheduled as tasks."""
+    seen = []
+    callback_done = asyncio.Event()
+
+    async def on_play():
+        seen.append("play")
+        callback_done.set()
+
+    player = NowPlaying("Test Player", on_play=on_play)
+
+    await player._interface.on_play()
+    await asyncio.wait_for(callback_done.wait(), timeout=1)
+
+    assert seen == ["play"]
 
 
 def test_select_interface_deprecation():
