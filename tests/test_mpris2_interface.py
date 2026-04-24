@@ -337,6 +337,49 @@ def test_tracklist_dbus_properties():
 
 
 @pytest.mark.asyncio
+async def test_tracklist_methods_dispatch_to_interface():
+    calls = {
+        "metadata": None,
+        "add": None,
+        "remove": None,
+        "goto": None,
+    }
+
+    class It:
+        async def on_get_tracks_metadata(self, track_ids):
+            calls["metadata"] = track_ids
+            return [PlaybackProperties.MetadataBean(id_="/track/1", title="Song")]
+
+        async def on_add_track(self, uri, after_track, set_as_current):
+            calls["add"] = (uri, after_track, set_as_current)
+
+        async def on_remove_track(self, track_id):
+            calls["remove"] = track_id
+
+        async def on_goto(self, track_id):
+            calls["goto"] = track_id
+
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList", it=It())
+    tracklist._properties.CanEditTracks = True
+
+    metadata = await type(tracklist).get_tracks_metadata.__wrapped__(tracklist, ["/track/1"])
+    await type(tracklist).add_track.__wrapped__(
+        tracklist,
+        "file:///song.mp3",
+        "/org/mpris/MediaPlayer2/TrackList/NoTrack",
+        True,
+    )
+    await type(tracklist).remove_track.__wrapped__(tracklist, "/track/1")
+    await type(tracklist).go_to.__wrapped__(tracklist, "/track/1")
+
+    assert calls["metadata"] == ["/track/1"]
+    assert calls["add"] == ("file:///song.mp3", "/org/mpris/MediaPlayer2/TrackList/NoTrack", True)
+    assert calls["remove"] == "/track/1"
+    assert calls["goto"] == "/track/1"
+    assert metadata[0]["mpris:trackid"].signature == "o"
+
+
+@pytest.mark.asyncio
 async def test_fullscreen_setter_when_can_set_fullscreen_false():
     """Test that fullscreen setter does nothing when CanSetFullscreen is False."""
     called = {"fullscreen": 0}

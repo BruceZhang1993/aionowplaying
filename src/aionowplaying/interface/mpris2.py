@@ -12,7 +12,7 @@ class DBusBeanMapper:
     @staticmethod
     def metadata(metadata: PlaybackProperties.MetadataBean) -> dict:
         metadata_map = dict()
-        metadata_map['mpris:trackid'] = Variant('s', metadata.id_)
+        metadata_map['mpris:trackid'] = Variant('o', metadata.id_)
         metadata_map['mpris:length'] = Variant('x', metadata.duration)
         metadata_map['mpris:artUrl'] = Variant('s', metadata.cover)
         metadata_map['xesam:album'] = Variant('s', metadata.album)
@@ -261,6 +261,25 @@ class MprisTracklistServiceInterface(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.Tracks.value)
     def tracks(self) -> 'ao':
         return self._properties.Tracks
+
+    @method(name="GetTracksMetadata")
+    async def get_tracks_metadata(self, track_ids: 'ao') -> 'aa{sv}':
+        items = await self._it.on_get_tracks_metadata(list(track_ids))
+        return [DBusBeanMapper.metadata(item) for item in items]
+
+    @method(name="AddTrack")
+    async def add_track(self, uri: 's', after_track: 'o', set_as_current: 'b'):
+        if self._properties.CanEditTracks:
+            await self._it.on_add_track(uri, after_track, set_as_current)
+
+    @method(name="RemoveTrack")
+    async def remove_track(self, track_id: 'o'):
+        if self._properties.CanEditTracks:
+            await self._it.on_remove_track(track_id)
+
+    @method(name="GoTo")
+    async def go_to(self, track_id: 'o'):
+        await self._it.on_goto(track_id)
 
     def get_property(self, key):
         return getattr(self._properties, key)
