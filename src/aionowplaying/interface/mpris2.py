@@ -262,6 +262,22 @@ class MprisTracklistServiceInterface(ServiceInterface):
     def tracks(self) -> 'ao':
         return self._properties.Tracks
 
+    @signal(name="TrackAdded")
+    async def track_added(self, metadata: dict, after_track: str) -> "a{sv}o":
+        return metadata, after_track
+
+    @signal(name="TrackRemoved")
+    async def track_removed(self, track_id: str) -> "o":
+        return track_id
+
+    @signal(name="TrackListReplaced")
+    async def track_list_replaced(self, tracks: list[str], current_track: str) -> "aoo":
+        return tracks, current_track
+
+    @signal(name="TrackMetadataChanged")
+    async def track_metadata_changed(self, track_id: str, metadata: dict) -> "oa{sv}":
+        return track_id, metadata
+
     @method(name="GetTracksMetadata")
     async def get_tracks_metadata(self, track_ids: 'ao') -> 'aa{sv}':
         items = await self._it.on_get_tracks_metadata(list(track_ids))
@@ -318,6 +334,18 @@ class Mpris2Interface(BaseInterface):
 
     async def seeked(self, position: int):
         await self._player_bus.seeked(position)
+
+    async def track_added(self, metadata, after_track):
+        await self._tracklist_bus.track_added(DBusBeanMapper.metadata(metadata), after_track)
+
+    async def track_removed(self, track_id):
+        await self._tracklist_bus.track_removed(track_id)
+
+    async def track_list_replaced(self, tracks, current_track):
+        await self._tracklist_bus.track_list_replaced(tracks, current_track)
+
+    async def track_metadata_changed(self, track_id, metadata):
+        await self._tracklist_bus.track_metadata_changed(track_id, DBusBeanMapper.metadata(metadata))
 
     async def start(self):
         self.dbus = await MessageBus().connect()

@@ -160,6 +160,40 @@ async def test_mpris2_interface_start_stop_and_getters():
     monkeypatch.undo()
 
 
+@pytest.mark.asyncio
+async def test_mpris2_tracklist_signal_bridge():
+    it = mpris2.Mpris2Interface("player")
+    emitted = []
+
+    async def fake_track_added(metadata, after_track):
+        emitted.append(("added", metadata, after_track))
+
+    async def fake_track_removed(track_id):
+        emitted.append(("removed", track_id))
+
+    async def fake_track_list_replaced(tracks, current_track):
+        emitted.append(("replaced", tracks, current_track))
+
+    async def fake_track_metadata_changed(track_id, metadata):
+        emitted.append(("changed", track_id, metadata))
+
+    it._tracklist_bus.track_added = fake_track_added
+    it._tracklist_bus.track_removed = fake_track_removed
+    it._tracklist_bus.track_list_replaced = fake_track_list_replaced
+    it._tracklist_bus.track_metadata_changed = fake_track_metadata_changed
+
+    metadata = PlaybackProperties.MetadataBean(id_="/track/1", title="Song")
+    await it.track_added(metadata, "/org/mpris/MediaPlayer2/TrackList/NoTrack")
+    await it.track_removed("/track/1")
+    await it.track_list_replaced(["/track/1"], "/track/1")
+    await it.track_metadata_changed("/track/1", metadata)
+
+    assert emitted[0][0] == "added"
+    assert emitted[1] == ("removed", "/track/1")
+    assert emitted[2] == ("replaced", ["/track/1"], "/track/1")
+    assert emitted[3][0] == "changed"
+
+
 def _get_dbus_prop(obj, name):
     prop = getattr(type(obj), name)
     if not hasattr(prop, "fget"):
