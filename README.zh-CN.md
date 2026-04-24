@@ -89,7 +89,7 @@ class MyPlayer(BaseInterface):
 - `⚪ 仅缓存`：只保存在本地状态中，不会映射到系统原生 API。
 - `🔴 未实现`：没有平台特定实现。基类默认空实现统一视为未实现。
 
-当应用提供 tracklist 回调时，Linux MPRIS2 后端会暴露 TrackList 属性、方法和信号。
+Linux MPRIS2 后端会暴露 TrackList 属性、方法和信号。应用通过覆写 tracklist 回调并更新 TrackList 属性来提供实际队列行为。
 
 ### 构造与生命周期
 

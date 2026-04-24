@@ -88,7 +88,7 @@ The tables below describe native backend coverage for each `BaseInterface` metho
 - `⚪ Cache only`: stored locally, but not exposed by the native platform API.
 - `🔴 Unimplemented`: no platform-specific implementation. Base no-op methods are treated as unimplemented.
 
-Linux MPRIS2 backend exposes TrackList properties, methods, and signals when the application supplies tracklist callbacks.
+Linux MPRIS2 backend exposes TrackList properties, methods, and signals. Applications provide queue behavior by overriding tracklist callbacks and updating TrackList properties.
 
 ### Construction And Lifecycle
 
