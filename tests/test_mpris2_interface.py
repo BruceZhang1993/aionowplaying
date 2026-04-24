@@ -380,6 +380,33 @@ async def test_tracklist_methods_dispatch_to_interface():
 
 
 @pytest.mark.asyncio
+async def test_tracklist_edit_methods_respect_can_edit_tracks():
+    calls = {
+        "add": 0,
+        "remove": 0,
+    }
+
+    class It:
+        async def on_add_track(self, uri, after_track, set_as_current):
+            calls["add"] += 1
+
+        async def on_remove_track(self, track_id):
+            calls["remove"] += 1
+
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList", it=It())
+
+    await type(tracklist).add_track.__wrapped__(
+        tracklist,
+        "file:///song.mp3",
+        "/org/mpris/MediaPlayer2/TrackList/NoTrack",
+        True,
+    )
+    await type(tracklist).remove_track.__wrapped__(tracklist, "/track/1")
+
+    assert calls == {"add": 0, "remove": 0}
+
+
+@pytest.mark.asyncio
 async def test_fullscreen_setter_when_can_set_fullscreen_false():
     """Test that fullscreen setter does nothing when CanSetFullscreen is False."""
     called = {"fullscreen": 0}
