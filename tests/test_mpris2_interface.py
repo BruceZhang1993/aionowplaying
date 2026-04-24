@@ -140,10 +140,14 @@ async def test_service_interface_raise_and_quit():
 @pytest.mark.asyncio
 async def test_tracklist_properties():
     tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
-    tracklist.set_property("Tracks", ["t1", "t2"])
+    tracklist.set_property("Tracks", ["a", "track-123", "/track/1"])
     tracklist.set_property("CanEditTracks", True)
 
-    assert tracklist.get_property("Tracks") == ["t1", "t2"]
+    assert tracklist.get_property("Tracks") == [
+        "/org/mpris/MediaPlayer2/TrackList/a",
+        "/org/mpris/MediaPlayer2/TrackList/track_123",
+        "/track/1",
+    ]
     assert tracklist.get_property("CanEditTracks") is True
 
 
@@ -195,7 +199,10 @@ async def test_mpris2_interface_start_stop_and_getters():
 
     assert it.get_property(PropertyName.CanQuit) is True
     assert it.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing
-    assert it.get_tracklist_property(TrackListPropertyName.Tracks) == ["a", "b"]
+    assert it.get_tracklist_property(TrackListPropertyName.Tracks) == [
+        "/org/mpris/MediaPlayer2/TrackList/a",
+        "/org/mpris/MediaPlayer2/TrackList/b",
+    ]
 
     await it.start()
     assert it.dbus is not None
@@ -234,19 +241,23 @@ async def test_mpris2_tracklist_signal_bridge():
     it._tracklist_bus.track_metadata_changed = fake_track_metadata_changed
 
     metadata = PlaybackProperties.MetadataBean(id_="/track/1", title="Song")
-    await it.track_added(metadata, "/org/mpris/MediaPlayer2/TrackList/NoTrack")
-    await it.track_removed("/track/1")
-    await it.track_list_replaced(["/track/1"], "/track/1")
-    await it.track_metadata_changed("/track/1", metadata)
+    await it.track_added(metadata, "after-1")
+    await it.track_removed("track-123")
+    await it.track_list_replaced(["a", "/track/1"], "current-1")
+    await it.track_metadata_changed("track-123", metadata)
 
     assert emitted[0][0] == "added"
     assert emitted[0][1]["mpris:trackid"].signature == "o"
     assert emitted[0][1]["xesam:title"].value == "Song"
-    assert emitted[0][2] == "/org/mpris/MediaPlayer2/TrackList/NoTrack"
-    assert emitted[1] == ("removed", "/track/1")
-    assert emitted[2] == ("replaced", ["/track/1"], "/track/1")
+    assert emitted[0][2] == "/org/mpris/MediaPlayer2/TrackList/after_1"
+    assert emitted[1] == ("removed", "/org/mpris/MediaPlayer2/TrackList/track_123")
+    assert emitted[2] == (
+        "replaced",
+        ["/org/mpris/MediaPlayer2/TrackList/a", "/track/1"],
+        "/org/mpris/MediaPlayer2/TrackList/current_1",
+    )
     assert emitted[3][0] == "changed"
-    assert emitted[3][1] == "/track/1"
+    assert emitted[3][1] == "/org/mpris/MediaPlayer2/TrackList/track_123"
     assert emitted[3][2]["mpris:trackid"].signature == "o"
     assert emitted[3][2]["xesam:title"].value == "Song"
 

@@ -273,6 +273,8 @@ class MprisTracklistServiceInterface(ServiceInterface):
         self._it = it
 
     def set_property(self, name: str, value: Any):
+        if name == TrackListPropertyName.Tracks.value:
+            value = [DBusBeanMapper._track_id_path(track_id) for track_id in value]
         setattr(self._properties, name, value)
         if name == TrackListPropertyName.Tracks.value:
             self.emit_properties_changed({}, [name])
@@ -367,19 +369,28 @@ class Mpris2Interface(BaseInterface):
         return value
 
     async def track_added(self, metadata, after_track):
-        result = self._tracklist_bus.track_added(DBusBeanMapper.metadata(metadata), after_track)
+        result = self._tracklist_bus.track_added(
+            DBusBeanMapper.metadata(metadata),
+            DBusBeanMapper._track_id_path(after_track),
+        )
         return await self._maybe_await(result)
 
     async def track_removed(self, track_id):
-        result = self._tracklist_bus.track_removed(track_id)
+        result = self._tracklist_bus.track_removed(DBusBeanMapper._track_id_path(track_id))
         return await self._maybe_await(result)
 
     async def track_list_replaced(self, tracks, current_track):
-        result = self._tracklist_bus.track_list_replaced(tracks, current_track)
+        result = self._tracklist_bus.track_list_replaced(
+            [DBusBeanMapper._track_id_path(track_id) for track_id in tracks],
+            DBusBeanMapper._track_id_path(current_track),
+        )
         return await self._maybe_await(result)
 
     async def track_metadata_changed(self, track_id, metadata):
-        result = self._tracklist_bus.track_metadata_changed(track_id, DBusBeanMapper.metadata(metadata))
+        result = self._tracklist_bus.track_metadata_changed(
+            DBusBeanMapper._track_id_path(track_id),
+            DBusBeanMapper.metadata(metadata),
+        )
         return await self._maybe_await(result)
 
     async def start(self):
