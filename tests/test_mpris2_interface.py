@@ -200,6 +200,24 @@ async def test_mpris2_tracklist_signal_bridge():
     assert emitted[3][2]["xesam:title"].value == "Song"
 
 
+def test_tracklist_signals_can_be_called_directly():
+    it = mpris2.Mpris2Interface("player")
+    no_track = "/org/mpris/MediaPlayer2/TrackList/NoTrack"
+    metadata = PlaybackProperties.MetadataBean(id_="/track/1", title="Song")
+    mapped = mpris2.DBusBeanMapper.metadata(metadata)
+
+    assert it._tracklist_bus.track_added(mapped, no_track) == (mapped, no_track)
+    assert it._tracklist_bus.track_removed("/track/1") == "/track/1"
+    assert it._tracklist_bus.track_list_replaced(["/track/1"], "/track/1") == (
+        ["/track/1"],
+        "/track/1",
+    )
+    assert it._tracklist_bus.track_metadata_changed("/track/1", mapped) == (
+        "/track/1",
+        mapped,
+    )
+
+
 def _get_dbus_prop(obj, name):
     prop = getattr(type(obj), name)
     if not hasattr(prop, "fget"):

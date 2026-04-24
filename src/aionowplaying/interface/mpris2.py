@@ -1,3 +1,4 @@
+import inspect
 from typing import Any
 
 from dbus_fast import PropertyAccess, Variant
@@ -263,19 +264,19 @@ class MprisTracklistServiceInterface(ServiceInterface):
         return self._properties.Tracks
 
     @signal(name="TrackAdded")
-    async def track_added(self, metadata: dict, after_track: str) -> "a{sv}o":
+    def track_added(self, metadata: dict, after_track: str) -> "a{sv}o":
         return metadata, after_track
 
     @signal(name="TrackRemoved")
-    async def track_removed(self, track_id: str) -> "o":
+    def track_removed(self, track_id: str) -> "o":
         return track_id
 
     @signal(name="TrackListReplaced")
-    async def track_list_replaced(self, tracks: list[str], current_track: str) -> "aoo":
+    def track_list_replaced(self, tracks: list[str], current_track: str) -> "aoo":
         return tracks, current_track
 
     @signal(name="TrackMetadataChanged")
-    async def track_metadata_changed(self, track_id: str, metadata: dict) -> "oa{sv}":
+    def track_metadata_changed(self, track_id: str, metadata: dict) -> "oa{sv}":
         return track_id, metadata
 
     @method(name="GetTracksMetadata")
@@ -335,17 +336,26 @@ class Mpris2Interface(BaseInterface):
     async def seeked(self, position: int):
         await self._player_bus.seeked(position)
 
+    async def _maybe_await(self, value):
+        if inspect.isawaitable(value):
+            return await value
+        return value
+
     async def track_added(self, metadata, after_track):
-        await self._tracklist_bus.track_added(DBusBeanMapper.metadata(metadata), after_track)
+        result = self._tracklist_bus.track_added(DBusBeanMapper.metadata(metadata), after_track)
+        return await self._maybe_await(result)
 
     async def track_removed(self, track_id):
-        await self._tracklist_bus.track_removed(track_id)
+        result = self._tracklist_bus.track_removed(track_id)
+        return await self._maybe_await(result)
 
     async def track_list_replaced(self, tracks, current_track):
-        await self._tracklist_bus.track_list_replaced(tracks, current_track)
+        result = self._tracklist_bus.track_list_replaced(tracks, current_track)
+        return await self._maybe_await(result)
 
     async def track_metadata_changed(self, track_id, metadata):
-        await self._tracklist_bus.track_metadata_changed(track_id, DBusBeanMapper.metadata(metadata))
+        result = self._tracklist_bus.track_metadata_changed(track_id, DBusBeanMapper.metadata(metadata))
+        return await self._maybe_await(result)
 
     async def start(self):
         self.dbus = await MessageBus().connect()
