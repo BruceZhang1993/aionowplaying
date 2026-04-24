@@ -1,4 +1,5 @@
 import inspect
+import re
 from typing import Any
 
 from dbus_fast import PropertyAccess, Variant
@@ -10,10 +11,29 @@ from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProp
 
 
 class DBusBeanMapper:
+    NO_TRACK_PATH = "/org/mpris/MediaPlayer2/TrackList/NoTrack"
+    TRACK_LIST_PATH = "/org/mpris/MediaPlayer2/TrackList"
+    _OBJECT_PATH_RE = re.compile(r"^/(?:[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)*)?$")
+    _TRACK_ID_SEGMENT_RE = re.compile(r"[^A-Za-z0-9_]")
+
+    @staticmethod
+    def _track_id_path(track_id: str) -> str:
+        if not track_id:
+            return DBusBeanMapper.NO_TRACK_PATH
+        if track_id.startswith("/") and DBusBeanMapper._OBJECT_PATH_RE.fullmatch(track_id):
+            return track_id
+
+        safe = DBusBeanMapper._TRACK_ID_SEGMENT_RE.sub("_", track_id)
+        if not safe:
+            safe = "track"
+        if safe[0].isdigit():
+            safe = f"track_{safe}"
+        return f"{DBusBeanMapper.TRACK_LIST_PATH}/{safe}"
+
     @staticmethod
     def metadata(metadata: PlaybackProperties.MetadataBean) -> dict:
         metadata_map = dict()
-        metadata_map['mpris:trackid'] = Variant('o', metadata.id_)
+        metadata_map['mpris:trackid'] = Variant('o', DBusBeanMapper._track_id_path(metadata.id_))
         metadata_map['mpris:length'] = Variant('x', metadata.duration)
         metadata_map['mpris:artUrl'] = Variant('s', metadata.cover)
         metadata_map['xesam:album'] = Variant('s', metadata.album)
@@ -316,6 +336,7 @@ class Mpris2Interface(BaseInterface):
         self._player_tracklist_name = 'org.mpris.MediaPlayer2.TrackList'
         self._object_path = '/org/mpris/MediaPlayer2'
         self._bus = MprisServiceInterface(self._entry_name, it=self)
+        self._bus._properties.HasTrackList = True
         self._player_bus = MprisPlayerServiceInterface(self._player_entry_name, it=self)
         self._tracklist_bus = MprisTracklistServiceInterface(self._player_tracklist_name, it=self)
 

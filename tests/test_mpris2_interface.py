@@ -55,6 +55,21 @@ async def test_dbus_mapper_and_player_set_property():
     assert player.get_property(PlaybackPropertyName.Metadata.value) == meta
 
 
+def test_dbus_mapper_track_id_is_valid_object_path():
+    no_track = "/org/mpris/MediaPlayer2/TrackList/NoTrack"
+
+    mapped_default = mpris2.DBusBeanMapper.metadata(PlaybackProperties.MetadataBean())
+    assert mapped_default["mpris:trackid"].signature == "o"
+    assert mapped_default["mpris:trackid"].value == no_track
+
+    mapped_path = mpris2.DBusBeanMapper.metadata(PlaybackProperties.MetadataBean(id_="/track/1"))
+    assert mapped_path["mpris:trackid"].value == "/track/1"
+
+    mapped_text = mpris2.DBusBeanMapper.metadata(PlaybackProperties.MetadataBean(id_="track-123"))
+    assert mapped_text["mpris:trackid"].value.startswith("/org/mpris/MediaPlayer2/TrackList/")
+    assert "-" not in mapped_text["mpris:trackid"].value
+
+
 @pytest.mark.asyncio
 async def test_loop_status_respects_can_control():
     called = {"count": 0}
@@ -156,12 +171,15 @@ async def test_mpris2_start_exports_tracklist_bus():
     monkeypatch.setattr(mpris2, "MessageBus", _FakeBus)
     it = mpris2.Mpris2Interface("player")
 
+    assert it.get_property(PropertyName.HasTrackList) is True
+
     await it.start()
 
     exported_paths = [entry[0] for entry in it.dbus.exported]
     exported_ifaces = [entry[1] for entry in it.dbus.exported]
     assert exported_paths.count("/org/mpris/MediaPlayer2") == 3
     assert any(isinstance(iface, mpris2.MprisTracklistServiceInterface) for iface in exported_ifaces)
+    assert it.get_property(PropertyName.HasTrackList) is True
     monkeypatch.undo()
 
 
