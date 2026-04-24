@@ -254,6 +254,10 @@ class MprisTracklistServiceInterface(ServiceInterface):
 
     def set_property(self, name: str, value: Any):
         setattr(self._properties, name, value)
+        if name == TrackListPropertyName.Tracks.value:
+            self.emit_properties_changed({}, [name])
+        else:
+            self.emit_properties_changed({name: value})
 
     @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.CanEditTracks.value)
     def can_edit_tracks(self) -> 'b':
@@ -361,6 +365,7 @@ class Mpris2Interface(BaseInterface):
         self.dbus = await MessageBus().connect()
         self.dbus.export(self._object_path, self._bus)
         self.dbus.export(self._object_path, self._player_bus)
+        self.dbus.export(self._object_path, self._tracklist_bus)
         await self.dbus.request_name(self._bus_name)
         await self.dbus.wait_for_disconnect()
 

@@ -132,6 +132,39 @@ async def test_tracklist_properties():
     assert tracklist.get_property("CanEditTracks") is True
 
 
+def test_tracklist_set_property_emits_properties_changed(monkeypatch):
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
+    emitted = []
+
+    def capture(*args):
+        emitted.append(args)
+
+    monkeypatch.setattr(tracklist, "emit_properties_changed", capture)
+
+    tracklist.set_property(TrackListPropertyName.CanEditTracks.value, True)
+    tracklist.set_property(TrackListPropertyName.Tracks.value, ["t1", "t2"])
+
+    assert emitted == [
+        ({TrackListPropertyName.CanEditTracks.value: True},),
+        ({}, [TrackListPropertyName.Tracks.value]),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_mpris2_start_exports_tracklist_bus():
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(mpris2, "MessageBus", _FakeBus)
+    it = mpris2.Mpris2Interface("player")
+
+    await it.start()
+
+    exported_paths = [entry[0] for entry in it.dbus.exported]
+    exported_ifaces = [entry[1] for entry in it.dbus.exported]
+    assert exported_paths.count("/org/mpris/MediaPlayer2") == 3
+    assert any(isinstance(iface, mpris2.MprisTracklistServiceInterface) for iface in exported_ifaces)
+    monkeypatch.undo()
+
+
 @pytest.mark.asyncio
 async def test_mpris2_interface_start_stop_and_getters():
     monkeypatch = pytest.MonkeyPatch()
