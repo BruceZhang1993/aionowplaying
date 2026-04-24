@@ -189,9 +189,15 @@ async def test_mpris2_tracklist_signal_bridge():
     await it.track_metadata_changed("/track/1", metadata)
 
     assert emitted[0][0] == "added"
+    assert emitted[0][1]["mpris:trackid"].signature == "o"
+    assert emitted[0][1]["xesam:title"].value == "Song"
+    assert emitted[0][2] == "/org/mpris/MediaPlayer2/TrackList/NoTrack"
     assert emitted[1] == ("removed", "/track/1")
     assert emitted[2] == ("replaced", ["/track/1"], "/track/1")
     assert emitted[3][0] == "changed"
+    assert emitted[3][1] == "/track/1"
+    assert emitted[3][2]["mpris:trackid"].signature == "o"
+    assert emitted[3][2]["xesam:title"].value == "Song"
 
 
 def _get_dbus_prop(obj, name):
