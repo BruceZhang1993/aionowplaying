@@ -237,6 +237,30 @@ class BaseInterface:
     async def on_set_position(self, track_id: str, position: int):
         pass
 
+    async def on_get_tracks_metadata(self, track_ids: list[str]) -> list[PlaybackProperties.MetadataBean]:
+        return []
+
+    async def on_add_track(self, uri: str, after_track: str, set_as_current: bool):
+        pass
+
+    async def on_remove_track(self, track_id: str):
+        pass
+
+    async def on_goto(self, track_id: str):
+        pass
+
+    async def track_added(self, metadata: PlaybackProperties.MetadataBean, after_track: str):
+        pass
+
+    async def track_removed(self, track_id: str):
+        pass
+
+    async def track_list_replaced(self, tracks: list[str], current_track: str):
+        pass
+
+    async def track_metadata_changed(self, track_id: str, metadata: PlaybackProperties.MetadataBean):
+        pass
+
     async def seeked(self, position: int):
         pass
 
