@@ -136,7 +136,7 @@ Linux MPRIS2 backend exposes TrackList properties, methods, and signals when the
 | --- | --- | --- | --- |
 | `set_property` | 🟢 Native<br>player properties | ⚪ Cache only<br>no player-level API | ⚪ Cache only<br>no player-level API |
 | `set_playback_property` | 🟢 Native<br>playback properties | 🟡 Partial<br>some fields unsupported | 🟡 Partial<br>some fields local only |
-| `set_tracklist_property` | 🟢 Native<br>TrackList properties + signals | ⚪ Cache only | ⚪ Cache only |
+| `set_tracklist_property` | 🟢 Native<br>TrackList properties<br>with D-Bus updates | ⚪ Cache only | ⚪ Cache only |
 | `get_property` | 🟢 Native<br>player properties | ⚪ Cache only<br>cached value | ⚪ Cache only<br>cached value |
 | `get_playback_property` | 🟢 Native<br>playback properties | 🟡 Partial<br>`Position`/`Rate` native, others cached | ⚪ Cache only<br>cached value |
 | `get_tracklist_property` | 🟢 Native<br>TrackList properties | ⚪ Cache only<br>cached value | ⚪ Cache only<br>cached value |

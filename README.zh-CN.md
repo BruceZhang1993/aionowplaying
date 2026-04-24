@@ -137,7 +137,7 @@ class MyPlayer(BaseInterface):
 | --- | --- | --- | --- |
 | `set_property` | 🟢 原生实现<br>player 属性 | ⚪ 仅缓存<br>无 player 级 API | ⚪ 仅缓存<br>无 player 级 API |
 | `set_playback_property` | 🟢 原生实现<br>playback 属性 | 🟡 部分实现<br>部分字段不支持 | 🟡 部分实现<br>部分字段仅本地 |
-| `set_tracklist_property` | 🟢 原生实现<br>TrackList 属性 + 信号 | ⚪ 仅缓存 | ⚪ 仅缓存 |
+| `set_tracklist_property` | 🟢 原生实现<br>TrackList 属性<br>含 D-Bus 更新通知 | ⚪ 仅缓存 | ⚪ 仅缓存 |
 | `get_property` | 🟢 原生实现<br>player 属性 | ⚪ 仅缓存<br>缓存值 | ⚪ 仅缓存<br>缓存值 |
 | `get_playback_property` | 🟢 原生实现<br>playback 属性 | 🟡 部分实现<br>`Position`/`Rate` 原生，其余缓存 | ⚪ 仅缓存<br>缓存值 |
 | `get_tracklist_property` | 🟢 原生实现<br>TrackList 属性 | ⚪ 仅缓存<br>缓存值 | ⚪ 仅缓存<br>缓存值 |
