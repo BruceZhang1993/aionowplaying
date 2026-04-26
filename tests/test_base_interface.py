@@ -42,6 +42,22 @@ def test_base_property_storage_roundtrip():
 
 
 @pytest.mark.asyncio
+async def test_base_tracklist_methods_default_values():
+    it = BaseInterface("base")
+
+    result = await it.on_get_tracks_metadata(["/track/1"])
+
+    assert result == []
+    await it.on_add_track("file:///song.mp3", "/org/mpris/MediaPlayer2/TrackList/NoTrack", False)
+    await it.on_remove_track("/track/1")
+    await it.on_goto("/track/1")
+    await it.track_added(PlaybackProperties.MetadataBean(id_="/track/1"), "/org/mpris/MediaPlayer2/TrackList/NoTrack")
+    await it.track_removed("/track/1")
+    await it.track_list_replaced(["/track/1"], "/track/1")
+    await it.track_metadata_changed("/track/1", PlaybackProperties.MetadataBean(id_="/track/1"))
+
+
+@pytest.mark.asyncio
 async def test_on_play_pause_calls_pause_when_playing():
     it = DummyInterface(PlaybackStatus.Playing)
     await it.on_play_pause()

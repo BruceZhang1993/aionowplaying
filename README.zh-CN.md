@@ -94,6 +94,8 @@ class MyPlayer(BaseInterface):
 - `⚪ 仅缓存`：只保存在本地状态中，不会映射到系统原生 API。
 - `🔴 未实现`：没有平台特定实现。基类默认空实现统一视为未实现。
 
+Linux MPRIS2 后端会暴露 TrackList 属性、方法和信号。应用通过覆写 tracklist 回调并更新 TrackList 属性来提供实际队列行为。
+
 ### 构造与生命周期
 
 | 方法 | Linux (MPRIS2) | macOS | Windows |
@@ -156,7 +158,7 @@ URI 激活是一个分工明确的能力：
 | --- | --- | --- | --- |
 | `set_property` | 🟢 原生实现<br>player 属性 | ⚪ 仅缓存<br>无 player 级 API | ⚪ 仅缓存<br>无 player 级 API |
 | `set_playback_property` | 🟢 原生实现<br>playback 属性 | 🟡 部分实现<br>部分字段不支持 | 🟡 部分实现<br>部分字段仅本地 |
-| `set_tracklist_property` | 🟢 原生实现<br>写入 MPRIS TrackList 属性 | ⚪ 仅缓存 | ⚪ 仅缓存 |
+| `set_tracklist_property` | 🟢 原生实现<br>TrackList 属性<br>含 D-Bus 更新通知 | ⚪ 仅缓存 | ⚪ 仅缓存 |
 | `get_property` | 🟢 原生实现<br>player 属性 | ⚪ 仅缓存<br>缓存值 | ⚪ 仅缓存<br>缓存值 |
 | `get_playback_property` | 🟢 原生实现<br>playback 属性 | 🟡 部分实现<br>`Position`/`Rate` 原生，其余缓存 | ⚪ 仅缓存<br>缓存值 |
 | `get_tracklist_property` | 🟢 原生实现<br>TrackList 属性 | ⚪ 仅缓存<br>缓存值 | ⚪ 仅缓存<br>缓存值 |

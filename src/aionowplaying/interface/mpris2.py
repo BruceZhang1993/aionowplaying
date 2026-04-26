@@ -1,3 +1,5 @@
+import inspect
+import re
 from typing import Any
 
 from dbus_fast import PropertyAccess, Variant
@@ -9,10 +11,29 @@ from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProp
 
 
 class DBusBeanMapper:
+    NO_TRACK_PATH = "/org/mpris/MediaPlayer2/TrackList/NoTrack"
+    TRACK_LIST_PATH = "/org/mpris/MediaPlayer2/TrackList"
+    _OBJECT_PATH_RE = re.compile(r"^/(?:[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)*)?$")
+    _TRACK_ID_SEGMENT_RE = re.compile(r"[^A-Za-z0-9_]")
+
+    @staticmethod
+    def _track_id_path(track_id: str) -> str:
+        if not track_id:
+            return DBusBeanMapper.NO_TRACK_PATH
+        if track_id.startswith("/") and DBusBeanMapper._OBJECT_PATH_RE.fullmatch(track_id):
+            return track_id
+
+        safe = DBusBeanMapper._TRACK_ID_SEGMENT_RE.sub("_", track_id)
+        if not safe:
+            safe = "track"
+        if safe[0].isdigit():
+            safe = f"track_{safe}"
+        return f"{DBusBeanMapper.TRACK_LIST_PATH}/{safe}"
+
     @staticmethod
     def metadata(metadata: PlaybackProperties.MetadataBean) -> dict:
         metadata_map = dict()
-        metadata_map['mpris:trackid'] = Variant('s', metadata.id_)
+        metadata_map['mpris:trackid'] = Variant('o', DBusBeanMapper._track_id_path(metadata.id_))
         metadata_map['mpris:length'] = Variant('x', metadata.duration)
         metadata_map['mpris:artUrl'] = Variant('s', metadata.cover)
         metadata_map['xesam:album'] = Variant('s', metadata.album)
@@ -252,7 +273,13 @@ class MprisTracklistServiceInterface(ServiceInterface):
         self._it = it
 
     def set_property(self, name: str, value: Any):
+        if name == TrackListPropertyName.Tracks.value:
+            value = [DBusBeanMapper._track_id_path(track_id) for track_id in value]
         setattr(self._properties, name, value)
+        if name == TrackListPropertyName.Tracks.value:
+            self.emit_properties_changed({}, [name])
+        else:
+            self.emit_properties_changed({name: value})
 
     @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.CanEditTracks.value)
     def can_edit_tracks(self) -> 'b':
@@ -261,6 +288,41 @@ class MprisTracklistServiceInterface(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ, name=TrackListPropertyName.Tracks.value)
     def tracks(self) -> 'ao':
         return self._properties.Tracks
+
+    @signal(name="TrackAdded")
+    def track_added(self, metadata: dict, after_track: str) -> "a{sv}o":
+        return metadata, after_track
+
+    @signal(name="TrackRemoved")
+    def track_removed(self, track_id: str) -> "o":
+        return track_id
+
+    @signal(name="TrackListReplaced")
+    def track_list_replaced(self, tracks: list[str], current_track: str) -> "aoo":
+        return tracks, current_track
+
+    @signal(name="TrackMetadataChanged")
+    def track_metadata_changed(self, track_id: str, metadata: dict) -> "oa{sv}":
+        return track_id, metadata
+
+    @method(name="GetTracksMetadata")
+    async def get_tracks_metadata(self, track_ids: 'ao') -> 'aa{sv}':
+        items = await self._it.on_get_tracks_metadata(list(track_ids))
+        return [DBusBeanMapper.metadata(item) for item in items]
+
+    @method(name="AddTrack")
+    async def add_track(self, uri: 's', after_track: 'o', set_as_current: 'b'):
+        if self._properties.CanEditTracks:
+            await self._it.on_add_track(uri, after_track, set_as_current)
+
+    @method(name="RemoveTrack")
+    async def remove_track(self, track_id: 'o'):
+        if self._properties.CanEditTracks:
+            await self._it.on_remove_track(track_id)
+
+    @method(name="GoTo")
+    async def go_to(self, track_id: 'o'):
+        await self._it.on_goto(track_id)
 
     def get_property(self, key):
         return getattr(self._properties, key)
@@ -276,6 +338,7 @@ class Mpris2Interface(BaseInterface):
         self._player_tracklist_name = 'org.mpris.MediaPlayer2.TrackList'
         self._object_path = '/org/mpris/MediaPlayer2'
         self._bus = MprisServiceInterface(self._entry_name, it=self)
+        self._bus._properties.HasTrackList = True
         self._player_bus = MprisPlayerServiceInterface(self._player_entry_name, it=self)
         self._tracklist_bus = MprisTracklistServiceInterface(self._player_tracklist_name, it=self)
 
@@ -300,10 +363,41 @@ class Mpris2Interface(BaseInterface):
     async def seeked(self, position: int):
         await self._player_bus.seeked(position)
 
+    async def _maybe_await(self, value):
+        if inspect.isawaitable(value):
+            return await value
+        return value
+
+    async def track_added(self, metadata, after_track):
+        result = self._tracklist_bus.track_added(
+            DBusBeanMapper.metadata(metadata),
+            DBusBeanMapper._track_id_path(after_track),
+        )
+        return await self._maybe_await(result)
+
+    async def track_removed(self, track_id):
+        result = self._tracklist_bus.track_removed(DBusBeanMapper._track_id_path(track_id))
+        return await self._maybe_await(result)
+
+    async def track_list_replaced(self, tracks, current_track):
+        result = self._tracklist_bus.track_list_replaced(
+            [DBusBeanMapper._track_id_path(track_id) for track_id in tracks],
+            DBusBeanMapper._track_id_path(current_track),
+        )
+        return await self._maybe_await(result)
+
+    async def track_metadata_changed(self, track_id, metadata):
+        result = self._tracklist_bus.track_metadata_changed(
+            DBusBeanMapper._track_id_path(track_id),
+            DBusBeanMapper.metadata(metadata),
+        )
+        return await self._maybe_await(result)
+
     async def start(self):
         self.dbus = await MessageBus().connect()
         self.dbus.export(self._object_path, self._bus)
         self.dbus.export(self._object_path, self._player_bus)
+        self.dbus.export(self._object_path, self._tracklist_bus)
         await self.dbus.request_name(self._bus_name)
         await self.dbus.wait_for_disconnect()
 

@@ -55,6 +55,21 @@ async def test_dbus_mapper_and_player_set_property():
     assert player.get_property(PlaybackPropertyName.Metadata.value) == meta
 
 
+def test_dbus_mapper_track_id_is_valid_object_path():
+    no_track = "/org/mpris/MediaPlayer2/TrackList/NoTrack"
+
+    mapped_default = mpris2.DBusBeanMapper.metadata(PlaybackProperties.MetadataBean())
+    assert mapped_default["mpris:trackid"].signature == "o"
+    assert mapped_default["mpris:trackid"].value == no_track
+
+    mapped_path = mpris2.DBusBeanMapper.metadata(PlaybackProperties.MetadataBean(id_="/track/1"))
+    assert mapped_path["mpris:trackid"].value == "/track/1"
+
+    mapped_text = mpris2.DBusBeanMapper.metadata(PlaybackProperties.MetadataBean(id_="track-123"))
+    assert mapped_text["mpris:trackid"].value.startswith("/org/mpris/MediaPlayer2/TrackList/")
+    assert "-" not in mapped_text["mpris:trackid"].value
+
+
 @pytest.mark.asyncio
 async def test_loop_status_respects_can_control():
     called = {"count": 0}
@@ -125,11 +140,51 @@ async def test_service_interface_raise_and_quit():
 @pytest.mark.asyncio
 async def test_tracklist_properties():
     tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
-    tracklist.set_property("Tracks", ["t1", "t2"])
+    tracklist.set_property("Tracks", ["a", "track-123", "/track/1"])
     tracklist.set_property("CanEditTracks", True)
 
-    assert tracklist.get_property("Tracks") == ["t1", "t2"]
+    assert tracklist.get_property("Tracks") == [
+        "/org/mpris/MediaPlayer2/TrackList/a",
+        "/org/mpris/MediaPlayer2/TrackList/track_123",
+        "/track/1",
+    ]
     assert tracklist.get_property("CanEditTracks") is True
+
+
+def test_tracklist_set_property_emits_properties_changed(monkeypatch):
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
+    emitted = []
+
+    def capture(*args):
+        emitted.append(args)
+
+    monkeypatch.setattr(tracklist, "emit_properties_changed", capture)
+
+    tracklist.set_property(TrackListPropertyName.CanEditTracks.value, True)
+    tracklist.set_property(TrackListPropertyName.Tracks.value, ["t1", "t2"])
+
+    assert emitted == [
+        ({TrackListPropertyName.CanEditTracks.value: True},),
+        ({}, [TrackListPropertyName.Tracks.value]),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_mpris2_start_exports_tracklist_bus():
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(mpris2, "MessageBus", _FakeBus)
+    it = mpris2.Mpris2Interface("player")
+
+    assert it.get_property(PropertyName.HasTrackList) is True
+
+    await it.start()
+
+    exported_paths = [entry[0] for entry in it.dbus.exported]
+    exported_ifaces = [entry[1] for entry in it.dbus.exported]
+    assert exported_paths.count("/org/mpris/MediaPlayer2") == 3
+    assert any(isinstance(iface, mpris2.MprisTracklistServiceInterface) for iface in exported_ifaces)
+    assert it.get_property(PropertyName.HasTrackList) is True
+    monkeypatch.undo()
 
 
 @pytest.mark.asyncio
@@ -144,7 +199,10 @@ async def test_mpris2_interface_start_stop_and_getters():
 
     assert it.get_property(PropertyName.CanQuit) is True
     assert it.get_playback_property(PlaybackPropertyName.PlaybackStatus) == PlaybackStatus.Playing
-    assert it.get_tracklist_property(TrackListPropertyName.Tracks) == ["a", "b"]
+    assert it.get_tracklist_property(TrackListPropertyName.Tracks) == [
+        "/org/mpris/MediaPlayer2/TrackList/a",
+        "/org/mpris/MediaPlayer2/TrackList/b",
+    ]
 
     await it.start()
     assert it.dbus is not None
@@ -158,6 +216,68 @@ async def test_mpris2_interface_start_stop_and_getters():
     it2 = mpris2.Mpris2Interface("player2")
     await it2.stop()
     monkeypatch.undo()
+
+
+@pytest.mark.asyncio
+async def test_mpris2_tracklist_signal_bridge():
+    it = mpris2.Mpris2Interface("player")
+    emitted = []
+
+    async def fake_track_added(metadata, after_track):
+        emitted.append(("added", metadata, after_track))
+
+    async def fake_track_removed(track_id):
+        emitted.append(("removed", track_id))
+
+    async def fake_track_list_replaced(tracks, current_track):
+        emitted.append(("replaced", tracks, current_track))
+
+    async def fake_track_metadata_changed(track_id, metadata):
+        emitted.append(("changed", track_id, metadata))
+
+    it._tracklist_bus.track_added = fake_track_added
+    it._tracklist_bus.track_removed = fake_track_removed
+    it._tracklist_bus.track_list_replaced = fake_track_list_replaced
+    it._tracklist_bus.track_metadata_changed = fake_track_metadata_changed
+
+    metadata = PlaybackProperties.MetadataBean(id_="/track/1", title="Song")
+    await it.track_added(metadata, "after-1")
+    await it.track_removed("track-123")
+    await it.track_list_replaced(["a", "/track/1"], "current-1")
+    await it.track_metadata_changed("track-123", metadata)
+
+    assert emitted[0][0] == "added"
+    assert emitted[0][1]["mpris:trackid"].signature == "o"
+    assert emitted[0][1]["xesam:title"].value == "Song"
+    assert emitted[0][2] == "/org/mpris/MediaPlayer2/TrackList/after_1"
+    assert emitted[1] == ("removed", "/org/mpris/MediaPlayer2/TrackList/track_123")
+    assert emitted[2] == (
+        "replaced",
+        ["/org/mpris/MediaPlayer2/TrackList/a", "/track/1"],
+        "/org/mpris/MediaPlayer2/TrackList/current_1",
+    )
+    assert emitted[3][0] == "changed"
+    assert emitted[3][1] == "/org/mpris/MediaPlayer2/TrackList/track_123"
+    assert emitted[3][2]["mpris:trackid"].signature == "o"
+    assert emitted[3][2]["xesam:title"].value == "Song"
+
+
+def test_tracklist_signals_can_be_called_directly():
+    it = mpris2.Mpris2Interface("player")
+    no_track = "/org/mpris/MediaPlayer2/TrackList/NoTrack"
+    metadata = PlaybackProperties.MetadataBean(id_="/track/1", title="Song")
+    mapped = mpris2.DBusBeanMapper.metadata(metadata)
+
+    assert it._tracklist_bus.track_added(mapped, no_track) == (mapped, no_track)
+    assert it._tracklist_bus.track_removed("/track/1") == "/track/1"
+    assert it._tracklist_bus.track_list_replaced(["/track/1"], "/track/1") == (
+        ["/track/1"],
+        "/track/1",
+    )
+    assert it._tracklist_bus.track_metadata_changed("/track/1", mapped) == (
+        "/track/1",
+        mapped,
+    )
 
 
 def _get_dbus_prop(obj, name):
@@ -334,6 +454,76 @@ def test_tracklist_dbus_properties():
     tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList")
     assert _get_dbus_prop(tracklist, "can_edit_tracks") is False
     assert _get_dbus_prop(tracklist, "tracks") == []
+
+
+@pytest.mark.asyncio
+async def test_tracklist_methods_dispatch_to_interface():
+    calls = {
+        "metadata": None,
+        "add": None,
+        "remove": None,
+        "goto": None,
+    }
+
+    class It:
+        async def on_get_tracks_metadata(self, track_ids):
+            calls["metadata"] = track_ids
+            return [PlaybackProperties.MetadataBean(id_="/track/1", title="Song")]
+
+        async def on_add_track(self, uri, after_track, set_as_current):
+            calls["add"] = (uri, after_track, set_as_current)
+
+        async def on_remove_track(self, track_id):
+            calls["remove"] = track_id
+
+        async def on_goto(self, track_id):
+            calls["goto"] = track_id
+
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList", it=It())
+    tracklist._properties.CanEditTracks = True
+
+    metadata = await type(tracklist).get_tracks_metadata.__wrapped__(tracklist, ["/track/1"])
+    await type(tracklist).add_track.__wrapped__(
+        tracklist,
+        "file:///song.mp3",
+        "/org/mpris/MediaPlayer2/TrackList/NoTrack",
+        True,
+    )
+    await type(tracklist).remove_track.__wrapped__(tracklist, "/track/1")
+    await type(tracklist).go_to.__wrapped__(tracklist, "/track/1")
+
+    assert calls["metadata"] == ["/track/1"]
+    assert calls["add"] == ("file:///song.mp3", "/org/mpris/MediaPlayer2/TrackList/NoTrack", True)
+    assert calls["remove"] == "/track/1"
+    assert calls["goto"] == "/track/1"
+    assert metadata[0]["mpris:trackid"].signature == "o"
+
+
+@pytest.mark.asyncio
+async def test_tracklist_edit_methods_respect_can_edit_tracks():
+    calls = {
+        "add": 0,
+        "remove": 0,
+    }
+
+    class It:
+        async def on_add_track(self, uri, after_track, set_as_current):
+            calls["add"] += 1
+
+        async def on_remove_track(self, track_id):
+            calls["remove"] += 1
+
+    tracklist = mpris2.MprisTracklistServiceInterface("org.mpris.MediaPlayer2.TrackList", it=It())
+
+    await type(tracklist).add_track.__wrapped__(
+        tracklist,
+        "file:///song.mp3",
+        "/org/mpris/MediaPlayer2/TrackList/NoTrack",
+        True,
+    )
+    await type(tracklist).remove_track.__wrapped__(tracklist, "/track/1")
+
+    assert calls == {"add": 0, "remove": 0}
 
 
 @pytest.mark.asyncio
