@@ -1,7 +1,7 @@
 import pytest
 
 import aionowplaying as aionp
-from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus
+from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus, PropertyName
 from aionowplaying.interface.base import MediaType
 from datetime import timedelta
 import asyncio
@@ -428,3 +428,279 @@ def test_nowplaying_interface_deprecation():
 
         assert len(w) >= 1
         assert any(issubclass(x.category, DeprecationWarning) for x in w)
+
+
+# New metadata properties tests
+
+def test_id_property():
+    """Test id property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.id = "track-123"
+    assert player.id == "track-123"
+
+
+def test_media_type_property():
+    """Test media_type property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.media_type = MediaType.Video
+    assert player.media_type == MediaType.Video
+
+
+def test_lyrics_property():
+    """Test lyrics property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.lyrics = "Some lyrics here"
+    assert player.lyrics == "Some lyrics here"
+
+
+def test_comments_property():
+    """Test comments property getter/setter."""
+    player = NowPlaying("Test Player")
+
+    # Test with list
+    player.comments = ["comment 1", "comment 2"]
+    assert player.comments == ["comment 1", "comment 2"]
+
+    # Test with string (should convert to list)
+    player.comments = "single comment"
+    assert player.comments == ["single comment"]
+
+
+def test_composer_property():
+    """Test composer property getter/setter."""
+    player = NowPlaying("Test Player")
+
+    player.composer = ["Composer 1", "Composer 2"]
+    assert player.composer == ["Composer 1", "Composer 2"]
+
+    player.composer = "Single Composer"
+    assert player.composer == ["Single Composer"]
+
+
+def test_genre_property():
+    """Test genre property getter/setter."""
+    player = NowPlaying("Test Player")
+
+    player.genre = ["Rock", "Pop"]
+    assert player.genre == ["Rock", "Pop"]
+
+    player.genre = "Jazz"
+    assert player.genre == ["Jazz"]
+
+
+def test_lyricist_property():
+    """Test lyricist property getter/setter."""
+    player = NowPlaying("Test Player")
+
+    player.lyricist = ["Lyricist 1"]
+    assert player.lyricist == ["Lyricist 1"]
+
+    player.lyricist = "Single Lyricist"
+    assert player.lyricist == ["Single Lyricist"]
+
+
+# New callback tests
+
+def test_capability_inference_from_new_callbacks():
+    """Test that capabilities are auto-inferred from new callbacks."""
+    player = NowPlaying(
+        "Test Player",
+        on_quit=lambda: None,
+        on_raise=lambda: None,
+        on_fullscreen=lambda _: None,
+    )
+
+    assert player._interface.get_property(PropertyName.CanQuit) is True
+    assert player._interface.get_property(PropertyName.CanRaise) is True
+    assert player._interface.get_property(PropertyName.CanSetFullscreen) is True
+
+
+def test_play_pause_callback_capability():
+    """Test that on_play_pause sets both CanPlay and CanPause."""
+    player = NowPlaying(
+        "Test Player",
+        on_play_pause=lambda: None,
+    )
+
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanPlay) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanPause) is True
+    assert player._interface.get_playback_property(PlaybackPropertyName.CanControl) is True
+
+
+@pytest.mark.asyncio
+async def test_rate_callback_execution():
+    """Test that rate callback is executed."""
+    rates = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_rate=lambda r: rates.append(r),
+    )
+
+    await player._interface.on_rate(1.5)
+    await asyncio.sleep(0.1)
+
+    assert rates == [1.5]
+
+
+@pytest.mark.asyncio
+async def test_play_pause_callback_execution():
+    """Test that play_pause callback is executed."""
+    call_log = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_play_pause=lambda: call_log.append('play_pause'),
+    )
+
+    await player._interface.on_play_pause()
+    await asyncio.sleep(0.1)
+
+    assert 'play_pause' in call_log
+
+
+@pytest.mark.asyncio
+async def test_quit_callback_execution():
+    """Test that quit callback is executed."""
+    call_log = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_quit=lambda: call_log.append('quit'),
+    )
+
+    await player._interface.on_quit()
+    await asyncio.sleep(0.1)
+
+    assert 'quit' in call_log
+
+
+@pytest.mark.asyncio
+async def test_raise_callback_execution():
+    """Test that raise callback is executed."""
+    call_log = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_raise=lambda: call_log.append('raise'),
+    )
+
+    await player._interface.on_raise()
+    await asyncio.sleep(0.1)
+
+    assert 'raise' in call_log
+
+
+@pytest.mark.asyncio
+async def test_fullscreen_callback_execution():
+    """Test that fullscreen callback is executed."""
+    values = []
+
+    player = NowPlaying(
+        "Test Player",
+        on_fullscreen=lambda v: values.append(v),
+    )
+
+    await player._interface.on_fullscreen(True)
+    await asyncio.sleep(0.1)
+
+    assert values == [True]
+
+
+# Player-level property tests
+
+def test_identity_property():
+    """Test identity property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.identity = "Custom Identity"
+    assert player.identity == "Custom Identity"
+
+
+def test_desktop_entry_property():
+    """Test desktop_entry property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.desktop_entry = "my-player"
+    assert player.desktop_entry == "my-player"
+
+
+def test_supported_uri_schemes_property():
+    """Test supported_uri_schemes property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.supported_uri_schemes = ["http", "https", "file"]
+    assert player.supported_uri_schemes == ["http", "https", "file"]
+
+
+def test_supported_mime_types_property():
+    """Test supported_mime_types property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.supported_mime_types = ["audio/mpeg", "audio/ogg"]
+    assert player.supported_mime_types == ["audio/mpeg", "audio/ogg"]
+
+
+def test_has_track_list_property():
+    """Test has_track_list property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.has_track_list = True
+    assert player.has_track_list is True
+
+
+def test_can_quit_read_only():
+    """Test can_quit is read-only (set via callback)."""
+    player = NowPlaying("Test Player", on_quit=lambda: None)
+    assert player.can_quit is True
+
+    player2 = NowPlaying("Test Player")
+    assert player2.can_quit is False
+
+
+def test_can_raise_read_only():
+    """Test can_raise is read-only (set via callback)."""
+    player = NowPlaying("Test Player", on_raise=lambda: None)
+    assert player.can_raise is True
+
+    player2 = NowPlaying("Test Player")
+    assert player2.can_raise is False
+
+
+def test_can_set_fullscreen_read_only():
+    """Test can_set_fullscreen is read-only (set via callback)."""
+    player = NowPlaying("Test Player", on_fullscreen=lambda _: None)
+    assert player.can_set_fullscreen is True
+
+    player2 = NowPlaying("Test Player")
+    assert player2.can_set_fullscreen is False
+
+
+def test_fullscreen_property():
+    """Test fullscreen property getter/setter."""
+    player = NowPlaying("Test Player")
+    player.fullscreen = True
+    assert player.fullscreen is True
+
+
+# seeked and property access tests
+
+@pytest.mark.asyncio
+async def test_seeked_method():
+    """Test seeked method converts timedelta to microseconds."""
+    seeked_positions = []
+
+    class TestInterface(aionp.BaseInterface):
+        async def seeked(self, position: int):
+            seeked_positions.append(position)
+
+    player = NowPlaying("Test Player")
+    player._interface = TestInterface("Test Player")
+
+    await player.seeked(timedelta(seconds=5))
+    assert seeked_positions == [5_000_000]
+
+
+def test_set_property_get_property():
+    """Test set_property and get_property methods."""
+    player = NowPlaying("Test Player")
+    player.set_property(PropertyName.Identity, "Test Identity")
+    assert player.get_property(PropertyName.Identity) == "Test Identity"
+
+    player.set_property(PropertyName.DesktopEntry, "test-entry")
+    assert player.get_property(PropertyName.DesktopEntry) == "test-entry"
