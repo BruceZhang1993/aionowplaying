@@ -181,8 +181,9 @@ async def test_mpris2_start_exports_tracklist_bus():
 
     exported_paths = [entry[0] for entry in it.dbus.exported]
     exported_ifaces = [entry[1] for entry in it.dbus.exported]
-    assert exported_paths.count("/org/mpris/MediaPlayer2") == 3
+    assert exported_paths.count("/org/mpris/MediaPlayer2") == 4
     assert any(isinstance(iface, mpris2.MprisTracklistServiceInterface) for iface in exported_ifaces)
+    assert any(isinstance(iface, mpris2.MprisPlaylistsServiceInterface) for iface in exported_ifaces)
     assert it.get_property(PropertyName.HasTrackList) is True
     monkeypatch.undo()
 
