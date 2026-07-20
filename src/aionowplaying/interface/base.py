@@ -8,11 +8,26 @@ class TrackListPropertyName(str, Enum):
     CanEditTracks = 'CanEditTracks'
 
 
+class PlaylistPropertyName(str, Enum):
+    PlaylistCount = 'PlaylistCount'
+    Orderings = 'Orderings'
+    ActivePlaylist = 'ActivePlaylist'
+
+
+class PlaylistOrdering(str, Enum):
+    Alphabetical = 'Alphabetical'
+    CreationDate = 'CreationDate'
+    ModifiedDate = 'ModifiedDate'
+    PlayCount = 'PlayCount'
+    User = 'User'
+
+
 class PropertyName(str, Enum):
     CanQuit = "CanQuit"
     CanSetFullscreen = "CanSetFullscreen"
     CanRaise = "CanRaise"
     HasTrackList = "HasTrackList"
+    HasPlaylists = "HasPlaylists"
     Identity = "Identity"
     DesktopEntry = "DesktopEntry"
     SupportedUriSchemes = "SupportedUriSchemes"
@@ -62,12 +77,26 @@ class TrackListProperties(BaseModel):
     CanEditTracks: bool = False
 
 
+class PlaylistBean(BaseModel):
+    id_: str = ''
+    name: str = ''
+    icon: str = ''
+
+
+class PlaylistProperties(BaseModel):
+    PlaylistCount: int = 0
+    Orderings: List[str] = []
+    ActivePlaylistValid: bool = False
+    ActivePlaylist: PlaylistBean = PlaylistBean()
+
+
 class PlayerProperties(BaseModel):
     Fullscreen: bool = False
     CanQuit: bool = False
     CanSetFullscreen: bool = False
     CanRaise: bool = False
     HasTrackList: bool = False
+    HasPlaylists: bool = False
     Identity: str = ""
     DesktopEntry: str = ""
     SupportedUriSchemes: List[str] = []
@@ -116,6 +145,7 @@ class BaseInterface:
         self._properties = PlayerProperties()
         self._playback_properties = PlaybackProperties()
         self._tracklist_properties = TrackListProperties()
+        self._playlist_properties = PlaylistProperties()
 
     async def start(self):
         """
@@ -261,6 +291,15 @@ class BaseInterface:
     async def track_metadata_changed(self, track_id: str, metadata: PlaybackProperties.MetadataBean):
         pass
 
+    async def on_activate_playlist(self, playlist_id: str):
+        pass
+
+    async def on_get_playlists(self, index: int, max_count: int, order: str, reverse: bool) -> list[PlaylistBean]:
+        return []
+
+    async def playlist_changed(self, playlist: PlaylistBean):
+        pass
+
     async def seeked(self, position: int):
         pass
 
@@ -273,6 +312,9 @@ class BaseInterface:
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
         setattr(self._tracklist_properties, name.value, value)
 
+    def set_playlist_property(self, name: PlaylistPropertyName, value: Any):
+        setattr(self._playlist_properties, name.value, value)
+
     def get_property(self, name: PropertyName) -> Any:
         return getattr(self._properties, name.value)
 
@@ -281,3 +323,6 @@ class BaseInterface:
 
     def get_tracklist_property(self, name: TrackListPropertyName) -> Any:
         return getattr(self._tracklist_properties, name.value)
+
+    def get_playlist_property(self, name: PlaylistPropertyName) -> Any:
+        return getattr(self._playlist_properties, name.value)

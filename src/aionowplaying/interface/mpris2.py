@@ -7,7 +7,8 @@ from dbus_fast.aio import MessageBus
 from dbus_fast.service import ServiceInterface, dbus_property, method, signal
 
 from aionowplaying.interface.base import BaseInterface, PropertyName, PlayerProperties, PlaybackProperties, \
-    PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties
+    PlaybackPropertyName, LoopStatus, TrackListPropertyName, TrackListProperties, \
+    PlaylistPropertyName, PlaylistProperties, PlaylistBean
 
 
 class DBusBeanMapper:
@@ -48,6 +49,10 @@ class DBusBeanMapper:
         metadata_map['xesam:trackNumber'] = Variant('i', metadata.trackNumber)
         metadata_map['xesam:url'] = Variant('s', metadata.url)
         return metadata_map
+
+    @staticmethod
+    def playlist_tuple(playlist: PlaylistBean) -> tuple:
+        return (playlist.id_, playlist.name, playlist.icon)
 
 
 class MprisPlayerServiceInterface(ServiceInterface):
@@ -228,6 +233,10 @@ class MprisServiceInterface(ServiceInterface):
     def has_track_list(self) -> 'b':
         return self._properties.HasTrackList
 
+    @dbus_property(access=PropertyAccess.READ, name=PropertyName.HasPlaylists.value)
+    def has_playlists(self) -> 'b':
+        return self._properties.HasPlaylists
+
     @dbus_property(access=PropertyAccess.READ, name=PropertyName.CanRaise.value)
     def can_raise(self) -> 'b':
         return self._properties.CanRaise
@@ -328,6 +337,53 @@ class MprisTracklistServiceInterface(ServiceInterface):
         return getattr(self._properties, key)
 
 
+class MprisPlaylistsServiceInterface(ServiceInterface):
+    def __init__(self, bus_name: str, it: 'Mpris2Interface' = None):
+        super().__init__(bus_name)
+        self._properties = PlaylistProperties()
+        self._it = it
+
+    def set_property(self, name: str, value: Any):
+        setattr(self._properties, name, value)
+        if name == PlaylistPropertyName.ActivePlaylist.value:
+            valid = self._properties.ActivePlaylistValid
+            playlist = self._properties.ActivePlaylist
+            self.emit_properties_changed({name: (valid, DBusBeanMapper.playlist_tuple(playlist))})
+        else:
+            self.emit_properties_changed({name: value})
+
+    @dbus_property(access=PropertyAccess.READ, name=PlaylistPropertyName.PlaylistCount.value)
+    def playlist_count(self) -> 'u':
+        return self._properties.PlaylistCount
+
+    @dbus_property(access=PropertyAccess.READ, name=PlaylistPropertyName.Orderings.value)
+    def orderings(self) -> 'as':
+        return self._properties.Orderings
+
+    @dbus_property(access=PropertyAccess.READ, name=PlaylistPropertyName.ActivePlaylist.value)
+    def active_playlist(self) -> '(b(oss))':
+        return (
+            self._properties.ActivePlaylistValid,
+            DBusBeanMapper.playlist_tuple(self._properties.ActivePlaylist),
+        )
+
+    @signal(name="PlaylistChanged")
+    def playlist_changed(self, playlist: tuple) -> "(oss)":
+        return playlist
+
+    @method(name="ActivatePlaylist")
+    async def activate_playlist(self, playlist_id: 'o'):
+        await self._it.on_activate_playlist(playlist_id)
+
+    @method(name="GetPlaylists")
+    async def get_playlists(self, index: 'u', max_count: 'u', order: 's', reverse: 'b') -> 'a(oss)':
+        playlists = await self._it.on_get_playlists(index, max_count, order, reverse)
+        return [DBusBeanMapper.playlist_tuple(p) for p in playlists]
+
+    def get_property(self, key):
+        return getattr(self._properties, key)
+
+
 class Mpris2Interface(BaseInterface):
     def __init__(self, name: str):
         super().__init__(name)
@@ -336,11 +392,14 @@ class Mpris2Interface(BaseInterface):
         self._entry_name = 'org.mpris.MediaPlayer2'
         self._player_entry_name = 'org.mpris.MediaPlayer2.Player'
         self._player_tracklist_name = 'org.mpris.MediaPlayer2.TrackList'
+        self._player_playlists_name = 'org.mpris.MediaPlayer2.Playlists'
         self._object_path = '/org/mpris/MediaPlayer2'
         self._bus = MprisServiceInterface(self._entry_name, it=self)
         self._bus._properties.HasTrackList = True
+        self._bus._properties.HasPlaylists = True
         self._player_bus = MprisPlayerServiceInterface(self._player_entry_name, it=self)
         self._tracklist_bus = MprisTracklistServiceInterface(self._player_tracklist_name, it=self)
+        self._playlists_bus = MprisPlaylistsServiceInterface(self._player_playlists_name, it=self)
 
     def set_property(self, name: PropertyName, value: Any):
         self._bus.set_property(name.value, value)
@@ -351,6 +410,9 @@ class Mpris2Interface(BaseInterface):
     def set_tracklist_property(self, name: TrackListPropertyName, value: Any):
         self._tracklist_bus.set_property(name.value, value)
 
+    def set_playlist_property(self, name: PlaylistPropertyName, value: Any):
+        self._playlists_bus.set_property(name.value, value)
+
     def get_property(self, name: PropertyName) -> Any:
         return self._bus.get_property(name.value)
 
@@ -359,6 +421,9 @@ class Mpris2Interface(BaseInterface):
 
     def get_tracklist_property(self, name: TrackListPropertyName) -> Any:
         return self._tracklist_bus.get_property(name.value)
+
+    def get_playlist_property(self, name: PlaylistPropertyName) -> Any:
+        return self._playlists_bus.get_property(name.value)
 
     async def seeked(self, position: int):
         await self._player_bus.seeked(position)
@@ -393,11 +458,18 @@ class Mpris2Interface(BaseInterface):
         )
         return await self._maybe_await(result)
 
+    async def playlist_changed(self, playlist):
+        result = self._playlists_bus.playlist_changed(
+            DBusBeanMapper.playlist_tuple(playlist),
+        )
+        return await self._maybe_await(result)
+
     async def start(self):
         self.dbus = await MessageBus().connect()
         self.dbus.export(self._object_path, self._bus)
         self.dbus.export(self._object_path, self._player_bus)
         self.dbus.export(self._object_path, self._tracklist_bus)
+        self.dbus.export(self._object_path, self._playlists_bus)
         await self.dbus.request_name(self._bus_name)
         await self.dbus.wait_for_disconnect()
 

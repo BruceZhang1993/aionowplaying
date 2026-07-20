@@ -9,6 +9,8 @@ from aionowplaying.interface.base import (
     PlaybackProperties,
     PlaybackPropertyName,
     PlaybackStatus,
+    PlaylistBean,
+    PlaylistPropertyName,
     PropertyName,
     TrackListPropertyName,
 )
@@ -50,6 +52,7 @@ class NowPlaying:
         on_fullscreen: Callable[[bool], Any] | None = None,
         on_raise: Callable[[], Any] | None = None,
         on_quit: Callable[[], Any] | None = None,
+        on_activate_playlist: Callable[[str], Any] | None = None,
     ):
         self.name = name
         self._identity = identity or name
@@ -78,6 +81,7 @@ class NowPlaying:
             'on_fullscreen': on_fullscreen,
             'on_raise': on_raise,
             'on_quit': on_quit,
+            'on_activate_playlist': on_activate_playlist,
         }
 
         # Setup capabilities based on callbacks
@@ -198,6 +202,9 @@ class NowPlaying:
         async def wrapped_on_goto(track_id: str):
             self._run_callback('on_goto', track_id)
 
+        async def wrapped_on_activate_playlist(playlist_id: str):
+            self._run_callback('on_activate_playlist', playlist_id)
+
         # Assign wrapped callbacks
         self._interface.on_fullscreen = wrapped_on_fullscreen
         self._interface.on_raise = wrapped_on_raise
@@ -219,6 +226,7 @@ class NowPlaying:
         self._interface.on_add_track = wrapped_on_add_track
         self._interface.on_remove_track = wrapped_on_remove_track
         self._interface.on_goto = wrapped_on_goto
+        self._interface.on_activate_playlist = wrapped_on_activate_playlist
 
     def _apply_metadata(self, metadata: dict[str, Any]) -> None:
         """Apply metadata to the playback properties."""
@@ -542,6 +550,35 @@ class NowPlaying:
     def maximum_rate(self, value: float):
         """Set maximum playback rate."""
         self._interface.set_playback_property(PlaybackPropertyName.MaximumRate, value)
+
+    # Playlist properties
+
+    @property
+    def active_playlist(self) -> PlaylistBean | None:
+        """Get the currently active playlist, or None if none is active."""
+        valid = self._interface._playlist_properties.ActivePlaylistValid
+        if not valid:
+            return None
+        return self._interface._playlist_properties.ActivePlaylist
+
+    @active_playlist.setter
+    def active_playlist(self, value: PlaylistBean | None):
+        """Set the active playlist."""
+        if value is None:
+            self._interface._playlist_properties.ActivePlaylistValid = False
+        else:
+            self._interface._playlist_properties.ActivePlaylistValid = True
+            self._interface._playlist_properties.ActivePlaylist = value
+
+    @property
+    def playlist_count(self) -> int:
+        """Get the number of available playlists."""
+        return self._interface._playlist_properties.PlaylistCount
+
+    @playlist_count.setter
+    def playlist_count(self, value: int):
+        """Set the number of available playlists."""
+        self._interface.set_playlist_property(PlaylistPropertyName.PlaylistCount, value)
 
     # State convenience methods
 
