@@ -1,11 +1,12 @@
+import asyncio
+from datetime import timedelta
+import warnings
+
 import pytest
 
 import aionowplaying as aionp
-from aionowplaying import NowPlaying, PlaybackPropertyName, PlaybackStatus, LoopStatus
-from aionowplaying.interface.base import MediaType
-from datetime import timedelta
-import asyncio
-import warnings
+from aionowplaying import LoopStatus, NowPlaying, PlaybackPropertyName, PlaybackStatus
+from aionowplaying.interface.base import MediaType, PropertyName, TrackListPropertyName
 
 
 class DummyInterface(aionp.BaseInterface):
@@ -108,6 +109,7 @@ def test_nowplaying_init_with_identity():
     player = NowPlaying("Test Player", identity="Custom Identity")
     assert player.name == "Test Player"
     assert player._identity == "Custom Identity"
+    assert player.identity == "Custom Identity"
 
 
 def test_init_applies_metadata_mapping():
@@ -333,6 +335,60 @@ def test_rate_property():
     assert player.rate == 1.5
 
 
+def test_player_properties_and_tracklist_properties():
+    """Test player and tracklist property getters/setters."""
+    player = NowPlaying("Test Player")
+
+    player.identity = "Updated Identity"
+    player.fullscreen = True
+    player.can_quit = True
+    player.can_set_fullscreen = True
+    player.can_raise = True
+    player.has_tracklist = True
+    player.desktop_entry = "test-player"
+    player.supported_uri_schemes = ["file", "https"]
+    player.supported_mime_types = ["audio/mpeg"]
+    player.tracks = ["/track/1", "/track/2"]
+    player.can_edit_tracks = True
+
+    assert player.identity == "Updated Identity"
+    assert player._identity == "Updated Identity"
+    assert player.fullscreen is True
+    assert player.can_quit is True
+    assert player.can_set_fullscreen is True
+    assert player.can_raise is True
+    assert player.has_tracklist is True
+    assert player.desktop_entry == "test-player"
+    assert player.supported_uri_schemes == ["file", "https"]
+    assert player.supported_mime_types == ["audio/mpeg"]
+    assert player.tracks == ["/track/1", "/track/2"]
+    assert player.can_edit_tracks is True
+
+
+def test_minimum_and_maximum_rate_properties():
+    """Test minimum and maximum rate getters/setters."""
+    player = NowPlaying("Test Player")
+
+    player.minimum_rate = 0.5
+    player.maximum_rate = 2.0
+
+    assert player.minimum_rate == 0.5
+    assert player.maximum_rate == 2.0
+
+
+def test_generic_property_helpers():
+    """Test generic property helper methods."""
+    player = NowPlaying("Test Player")
+
+    player.set_property(PropertyName.DesktopEntry, "helper-entry")
+    player.set_playback_property(PlaybackPropertyName.CanControl, True)
+    player.set_tracklist_property(TrackListPropertyName.CanEditTracks, True)
+
+    assert player.get_property(PropertyName.DesktopEntry) == "helper-entry"
+    assert player.get_playback_property(PlaybackPropertyName.CanControl) is True
+    assert player.get_tracklist_property(TrackListPropertyName.CanEditTracks) is True
+
+
 @pytest.mark.asyncio
 async def test_start_stop_lifecycle():
     """Test start and stop lifecycle methods."""
@@ -373,6 +429,55 @@ async def test_callback_execution():
 
 
 @pytest.mark.asyncio
+async def test_extended_callbacks_are_forwarded():
+    """Test that newly exposed callbacks are wired to the facade."""
+    call_log = []
+    metadata_result = [aionp.PlaybackProperties.MetadataBean(id_="/track/1", title="Track 1")]
+
+    player = NowPlaying(
+        "Test Player",
+        on_play_pause=lambda: call_log.append("play_pause"),
+        on_rate=lambda rate: call_log.append(("rate", rate)),
+        on_open_uri=lambda uri: call_log.append(("open_uri", uri)),
+        on_set_position=lambda track_id, delta: call_log.append(("set_position", track_id, delta)),
+        on_get_tracks_metadata=lambda track_ids: metadata_result if track_ids == ["/track/1"] else [],
+        on_add_track=lambda uri, after_track, set_as_current: call_log.append(
+            ("add_track", uri, after_track, set_as_current)
+        ),
+        on_remove_track=lambda track_id: call_log.append(("remove_track", track_id)),
+        on_goto=lambda track_id: call_log.append(("goto", track_id)),
+        on_fullscreen=lambda fullscreen: call_log.append(("fullscreen", fullscreen)),
+        on_raise=lambda: call_log.append("raise"),
+        on_quit=lambda: call_log.append("quit"),
+    )
+
+    await player._interface.on_play_pause()
+    await player._interface.on_rate(1.25)
+    await player._interface.on_open_uri("https://example.com")
+    await player._interface.on_set_position("/track/1", 2_000_000)
+    result = await player._interface.on_get_tracks_metadata(["/track/1"])
+    await player._interface.on_add_track("file:///song.mp3", "/track/1", True)
+    await player._interface.on_remove_track("/track/1")
+    await player._interface.on_goto("/track/2")
+    await player._interface.on_fullscreen(True)
+    await player._interface.on_raise()
+    await player._interface.on_quit()
+    await asyncio.sleep(0.1)
+
+    assert result == metadata_result
+    assert "play_pause" in call_log
+    assert ("rate", 1.25) in call_log
+    assert ("open_uri", "https://example.com") in call_log
+    assert ("set_position", "/track/1", timedelta(seconds=2)) in call_log
+    assert ("add_track", "file:///song.mp3", "/track/1", True) in call_log
+    assert ("remove_track", "/track/1") in call_log
+    assert ("goto", "/track/2") in call_log
+    assert ("fullscreen", True) in call_log
+    assert "raise" in call_log
+    assert "quit" in call_log
+
+
+@pytest.mark.asyncio
 async def test_seek_callback_converts_microseconds_to_timedelta():
     """Test seek callback wrapper converts microseconds to timedelta."""
     offsets = []
@@ -403,6 +508,67 @@ async def test_async_callback_is_scheduled():
     await asyncio.wait_for(callback_done.wait(), timeout=1)
 
     assert seen == ["play"]
+
+
+@pytest.mark.asyncio
+async def test_get_tracks_metadata_async_callback_is_awaited():
+    """Test async metadata callback returns its result to the backend."""
+    callback_done = asyncio.Event()
+    expected = [aionp.PlaybackProperties.MetadataBean(id_="/track/async")]
+
+    async def on_get_tracks_metadata(track_ids):
+        assert track_ids == ["/track/async"]
+        callback_done.set()
+        return expected
+
+    player = NowPlaying("Test Player", on_get_tracks_metadata=on_get_tracks_metadata)
+
+    result = await player._interface.on_get_tracks_metadata(["/track/async"])
+    await asyncio.wait_for(callback_done.wait(), timeout=1)
+
+    assert result == expected
+
+
+@pytest.mark.asyncio
+async def test_track_events_and_seeked_are_forwarded(monkeypatch):
+    """Test facade event methods forward to the underlying interface."""
+    player = NowPlaying("Test Player")
+    calls = {}
+
+    async def fake_track_added(metadata, after_track):
+        calls["track_added"] = (metadata, after_track)
+
+    async def fake_track_removed(track_id):
+        calls["track_removed"] = track_id
+
+    async def fake_track_list_replaced(tracks, current_track):
+        calls["track_list_replaced"] = (tracks, current_track)
+
+    async def fake_track_metadata_changed(track_id, metadata):
+        calls["track_metadata_changed"] = (track_id, metadata)
+
+    async def fake_seeked(position):
+        calls["seeked"] = position
+
+    monkeypatch.setattr(player._interface, "track_added", fake_track_added)
+    monkeypatch.setattr(player._interface, "track_removed", fake_track_removed)
+    monkeypatch.setattr(player._interface, "track_list_replaced", fake_track_list_replaced)
+    monkeypatch.setattr(player._interface, "track_metadata_changed", fake_track_metadata_changed)
+    monkeypatch.setattr(player._interface, "seeked", fake_seeked)
+
+    metadata = aionp.PlaybackProperties.MetadataBean(id_="/track/1", title="Track 1")
+
+    await player.track_added(metadata, "/track/0")
+    await player.track_removed("/track/1")
+    await player.track_list_replaced(["/track/1", "/track/2"], "/track/2")
+    await player.track_metadata_changed("/track/1", metadata)
+    await player.seeked(timedelta(seconds=3))
+
+    assert calls["track_added"] == (metadata, "/track/0")
+    assert calls["track_removed"] == "/track/1"
+    assert calls["track_list_replaced"] == (["/track/1", "/track/2"], "/track/2")
+    assert calls["track_metadata_changed"] == ("/track/1", metadata)
+    assert calls["seeked"] == 3_000_000
 
 
 def test_select_interface_deprecation():

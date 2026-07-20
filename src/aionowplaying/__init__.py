@@ -1,6 +1,6 @@
 __all__ = ['NowPlaying', 'select_interface', 'BaseInterface', 'PropertyName', 'LoopStatus',
            'PlaybackPropertyName', 'PlaybackProperties', 'PlaybackStatus', 'PlaylistBean',
-           'PlaylistPropertyName', 'PlaylistOrdering']
+           'PlaylistPropertyName', 'PlaylistOrdering', 'TrackListPropertyName']
 
 import warnings
 from typing import Type
@@ -8,7 +8,7 @@ from typing import Type
 from aionowplaying.nowplaying import NowPlaying
 from aionowplaying.interface import select_interface, BaseInterface
 from aionowplaying.interface.base import PropertyName, LoopStatus, PlaybackPropertyName, PlaybackProperties, \
-    PlaybackStatus, PlaylistBean, PlaylistPropertyName, PlaylistOrdering
+    PlaybackStatus, PlaylistBean, PlaylistPropertyName, PlaylistOrdering, TrackListPropertyName
 
 
 def __getattr__(name: str):
